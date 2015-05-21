@@ -20,6 +20,7 @@ import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.StatisticType;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class MetricsProcessorHelperTest {
 	
@@ -82,12 +83,17 @@ public class MetricsProcessorHelperTest {
 	@Test
 	public void testCreateMetricStatsMapForUploadWithNamespaceAsPrefix() {
 		NamespaceMetricStatistics testNamespaceStats = createTestNamespaceMetricStatistics("testNamespace");
-		Map<String, Double> result = MetricsProcessorHelper.createMetricStatsMapForUpload(testNamespaceStats, true);
+		Map<String, String> testDimensionDictionary = Maps.newHashMap();
+		testDimensionDictionary.put("testDimesionName", "My Test Dimension");
+		
+		Map<String, Double> result = MetricsProcessorHelper.createMetricStatsMapForUpload(
+				testNamespaceStats, testDimensionDictionary, true);
 		
 		for (int accountIndex=0; accountIndex<2; accountIndex++) {
 			for (int regionIndex=0; regionIndex<2; regionIndex++) {
 				for (int metricIndex=0; metricIndex <2; metricIndex++) {
-					String expectedMetricName = String.format("testNamespace|account%s|region%s|testDimesionValue|testMetric%s (testUnit)", 
+					String expectedMetricName = String.format(
+							"testNamespace|account%s|region%s|My Test Dimension|testDimesionValue|testMetric%s (testUnit)", 
 							accountIndex, regionIndex, metricIndex);
 					
 					assertNotNull(result.get(expectedMetricName));
@@ -97,14 +103,15 @@ public class MetricsProcessorHelperTest {
 	}
 	
 	@Test
-	public void testCreateMetricStatsMapForUploadNotUsingNamespaceAsPrefix() {
+	public void testCreateMetricStatsMapForUploadNotUsingNamespaceAsPrefixAndNullDimensionDictionary() {
 		NamespaceMetricStatistics testNamespaceStats = createTestNamespaceMetricStatistics("testNamespace");
-		Map<String, Double> result = MetricsProcessorHelper.createMetricStatsMapForUpload(testNamespaceStats, false);
+		Map<String, Double> result = MetricsProcessorHelper.createMetricStatsMapForUpload(testNamespaceStats, null, false);
 		
 		for (int accountIndex=0; accountIndex<2; accountIndex++) {
 			for (int regionIndex=0; regionIndex<2; regionIndex++) {
 				for (int metricIndex=0; metricIndex <2; metricIndex++) {
-					String expectedMetricName = String.format("account%s|region%s|testDimesionValue|testMetric%s (testUnit)", 
+					String expectedMetricName = String.format(
+							"account%s|region%s|testDimesionName|testDimesionValue|testMetric%s (testUnit)", 
 							accountIndex, regionIndex, metricIndex);
 					
 					assertNotNull(result.get(expectedMetricName));

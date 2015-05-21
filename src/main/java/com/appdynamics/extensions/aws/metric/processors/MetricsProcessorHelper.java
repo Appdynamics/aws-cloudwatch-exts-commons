@@ -132,7 +132,8 @@ public class MetricsProcessorHelper {
 		return false;
 	}
 	
-	public static Map<String, Double> createMetricStatsMapForUpload(NamespaceMetricStatistics namespaceMetricStats, 
+	public static Map<String, Double> createMetricStatsMapForUpload(NamespaceMetricStatistics namespaceMetricStats,
+			Map<String, String> dimesionNameForMetricPathDictionary,
 			boolean useNamespaceAsPrefix) {
 		Map<String, Double> statsMap = new HashMap<String, Double>();
 		
@@ -148,6 +149,7 @@ public class MetricsProcessorHelper {
 			
 			processAccountMetricStatisticsList(namespacePrefix, 
 					namespaceMetricStats.getAccountMetricStatisticsList(),
+					dimesionNameForMetricPathDictionary,
 					statsMap);
 		}
 		
@@ -155,45 +157,68 @@ public class MetricsProcessorHelper {
 	}
 	
 	private static void processAccountMetricStatisticsList(String namespacePrefix, 
-			List<AccountMetricStatistics> accountStatsList, 
+			List<AccountMetricStatistics> accountStatsList,
+			Map<String, String> dimesionNameForMetricPathDictionary,
 			Map<String, Double> statsMap) {
 		for (AccountMetricStatistics accountStats : accountStatsList) {
 			// e.g. MyTestAccount|
 			String accountPrefix = buildMetricName(namespacePrefix, accountStats.getAccountName(), true);
-			processRegionMetricStatisticsList(accountPrefix, accountStats.getRegionMetricStatisticsList(), statsMap);
+			processRegionMetricStatisticsList(accountPrefix, accountStats.getRegionMetricStatisticsList(), 
+					dimesionNameForMetricPathDictionary, statsMap);
 		}
 	}
 	
 	private static void processRegionMetricStatisticsList(String accountPrefix, 
-			List<RegionMetricStatistics> regionStatsList, Map<String, Double> statsMap) {
+			List<RegionMetricStatistics> regionStatsList,
+			Map<String, String> dimesionNameForMetricPathDictionary,
+			Map<String, Double> statsMap) {
 		for (RegionMetricStatistics regionStats : regionStatsList) {
 			// e.g. MyTestAccount|us-east-1|
 			String regionPrefix = buildMetricName(accountPrefix, regionStats.getRegion(), true);
-			processMetricStatisticsList(regionPrefix, regionStats.getMetricStatisticsList(), statsMap);
+			processMetricStatisticsList(regionPrefix, regionStats.getMetricStatisticsList(), 
+					dimesionNameForMetricPathDictionary, statsMap);
 		}
 	}
 	
 	private static void processMetricStatisticsList(String regionPrefix,
-			List<MetricStatistic> metricStatsList, Map<String, Double> statsMap) {
+			List<MetricStatistic> metricStatsList,
+			Map<String, String> dimesionNameForMetricPathDictionary,
+			Map<String, Double> statsMap) {
 
 		for (MetricStatistic metricStats : metricStatsList) {
-			String partialMetricName = regionPrefix;
+			String partialMetricPath = regionPrefix;
 
 			for (Dimension dimension : metricStats.getMetric().getDimensions()) {
-				// e.g. MyTestAccount|us-east-1|mycachecluster|0001|
-				partialMetricName = buildMetricName(partialMetricName, dimension.getValue(), true);
+				String dimesionNameForMetricPath = getDimesionNameForMetricPath(dimension.getName(),
+						dimesionNameForMetricPathDictionary);
+				
+				// e.g. MyTestAccount|us-east-1|Cache Cluster|
+				partialMetricPath = buildMetricName(partialMetricPath, dimesionNameForMetricPath, true);
+				
+				// e.g. MyTestAccount|us-east-1|Cache Cluster|mycachecluster
+				partialMetricPath = buildMetricName(partialMetricPath, dimension.getValue(), true);
 			}
 
-			String metricName = metricStats.getMetric().getMetricName();
+			String awsMetricName = metricStats.getMetric().getMetricName();
 			
 			if (StringUtils.isNotBlank(metricStats.getUnit())) {
-				metricName = String.format("%s (%s)", metricName, metricStats.getUnit());
+				awsMetricName = String.format("%s (%s)", awsMetricName, metricStats.getUnit());
 			}
 			
-			// e.g. MyTestAccount|us-east-1|mycachecluster|0001|CPUUtilization (Percent)
-			String fullMetricName = buildMetricName(partialMetricName, metricName, false);
-			statsMap.put(fullMetricName, metricStats.getValue());
+			// e.g. MyTestAccount|us-east-1|Cache Cluster|mycachecluster|Cache Node|0001|CPUUtilization (Percent)
+			String fullMetricPath = buildMetricName(partialMetricPath, awsMetricName, false);
+			statsMap.put(fullMetricPath, metricStats.getValue());
 		}
+	}
+	
+	private static String getDimesionNameForMetricPath(String dimensionName, Map<String, String> dictionary) {
+		String metricPathName = null;
+		
+		if (dictionary != null) {
+			metricPathName = dictionary.get(dimensionName);
+		}
+		
+		return StringUtils.isNotBlank(metricPathName) ? metricPathName : dimensionName;
 	}
 	
 	private static String buildMetricName(String metricPrefix, String toAppend, boolean appendMetricSeparator) {
