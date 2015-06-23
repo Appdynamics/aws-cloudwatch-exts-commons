@@ -93,7 +93,7 @@ public class MetricsProcessorHelperTest {
 			for (int regionIndex=0; regionIndex<2; regionIndex++) {
 				for (int metricIndex=0; metricIndex <2; metricIndex++) {
 					String expectedMetricName = String.format(
-							"testNamespace|account%s|region%s|My Test Dimension|testDimesionValue|testMetric%s (testUnit)", 
+							"testNamespace|account%s|region%s|My Test Dimension|testDimesionValue|testMetric%s", 
 							accountIndex, regionIndex, metricIndex);
 					
 					assertNotNull(result.get(expectedMetricName));
@@ -111,7 +111,7 @@ public class MetricsProcessorHelperTest {
 			for (int regionIndex=0; regionIndex<2; regionIndex++) {
 				for (int metricIndex=0; metricIndex <2; metricIndex++) {
 					String expectedMetricName = String.format(
-							"account%s|region%s|testDimesionName|testDimesionValue|testMetric%s (testUnit)", 
+							"account%s|region%s|testDimesionName|testDimesionValue|testMetric%s", 
 							accountIndex, regionIndex, metricIndex);
 					
 					assertNotNull(result.get(expectedMetricName));

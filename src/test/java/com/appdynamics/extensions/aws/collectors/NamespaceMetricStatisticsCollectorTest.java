@@ -25,8 +25,10 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import com.amazonaws.services.cloudwatch.model.Metric;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
+import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
 import com.appdynamics.extensions.aws.config.MetricsConfig;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
+import com.appdynamics.extensions.aws.config.ProxyConfig;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
@@ -56,6 +58,8 @@ public class NamespaceMetricStatisticsCollectorTest {
 	public void testMetricsRetrievalIsSuccessful() throws Exception {
 		List<Account> testAccounts = getTestAccounts();
 		
+		when(mockMetricsProcessor.getNamespace()).thenReturn("TestNamespace");
+		
 		AccountMetricStatisticsCollector mockAccountStatsCollector1 = mock(AccountMetricStatisticsCollector.class);
 		AccountMetricStatistics accountStats1 = createTestAccountMetricStatistics(testAccounts.get(0).getDisplayAccountName());
 		when(mockAccountStatsCollector1.call()).thenReturn(accountStats1);
@@ -73,6 +77,8 @@ public class NamespaceMetricStatisticsCollectorTest {
 		when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
 		when(mockBuilder.withNoOfMetricThreadsPerRegion(anyInt())).thenReturn(mockBuilder);
 		when(mockBuilder.withNoOfRegionThreadsPerAccount(anyInt())).thenReturn(mockBuilder);
+		when(mockBuilder.withCredentialsDecryptionConfig(any(CredentialsDecryptionConfig.class))).thenReturn(mockBuilder);
+		when(mockBuilder.withProxyConfig(any(ProxyConfig.class))).thenReturn(mockBuilder);
 		when(mockBuilder.build()).thenReturn(mockAccountStatsCollector1, mockAccountStatsCollector2);
 		
 		ArgumentCaptor<NamespaceMetricStatistics> argumentCaptor =
@@ -83,8 +89,11 @@ public class NamespaceMetricStatisticsCollectorTest {
 		Map<String, Double> mockMap = mock(Map.class);
 		when(mockMetricsProcessor.createMetricStatsMapForUpload(argumentCaptor.capture())).thenReturn(mockMap);
 		
-		classUnderTest = new NamespaceMetricStatisticsCollector(testAccounts, 
-				mockConcurrencyConfig, mockMetricsConfig, mockMetricsProcessor);
+		classUnderTest = new NamespaceMetricStatisticsCollector.Builder(testAccounts, 
+				mockConcurrencyConfig, 
+				mockMetricsConfig, 
+				mockMetricsProcessor)
+			.build();
 		
 		classUnderTest.call();
 		

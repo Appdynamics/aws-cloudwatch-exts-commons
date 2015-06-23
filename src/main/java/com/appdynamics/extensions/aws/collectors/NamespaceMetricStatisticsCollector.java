@@ -1,6 +1,7 @@
 package com.appdynamics.extensions.aws.collectors;
 
 import static com.appdynamics.extensions.aws.Constants.*;
+import static com.appdynamics.extensions.aws.validators.Validator.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +19,10 @@ import org.apache.log4j.Logger;
 
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
+import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
 import com.appdynamics.extensions.aws.config.MetricsConfig;
+import com.appdynamics.extensions.aws.config.ProxyConfig;
+import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
@@ -40,15 +44,18 @@ public class NamespaceMetricStatisticsCollector implements Callable<Map<String, 
 	private ConcurrencyConfig concurrencyConfig;
 	
 	private MetricsProcessor metricsProcessor;
+	
+	private CredentialsDecryptionConfig credentialsDecryptionConfig;
+	
+	private ProxyConfig proxyConfig;
 
-	public NamespaceMetricStatisticsCollector(List<Account> accounts,
-			ConcurrencyConfig concurrencyConfig,
-			MetricsConfig metricsConfig, 
-			MetricsProcessor metricsProcessor) {
-		this.accounts = accounts;
-		this.concurrencyConfig = concurrencyConfig;
-		this.metricsConfig = metricsConfig;
-		this.metricsProcessor = metricsProcessor;
+	private NamespaceMetricStatisticsCollector(Builder builder) {
+		this.accounts = builder.accounts;
+		this.concurrencyConfig = builder.concurrencyConfig;
+		this.metricsConfig = builder.metricsConfig;
+		this.metricsProcessor = builder.metricsProcessor;
+		this.credentialsDecryptionConfig = builder.credentialsDecryptionConfig;
+		this.proxyConfig = builder.proxyConfig;
 	}
 	
 	/**
@@ -68,6 +75,8 @@ public class NamespaceMetricStatisticsCollector implements Callable<Map<String, 
 			ExecutorService threadPool = null;
 			
 			try {
+				validateNamespace(metricsProcessor.getNamespace());
+				
 				threadPool = Executors.newFixedThreadPool(getNoOfAccountThreads());
 				CompletionService<AccountMetricStatistics> tasks = 
 						createConcurrentAccountTasks(threadPool);
@@ -77,6 +86,12 @@ public class NamespaceMetricStatisticsCollector implements Callable<Map<String, 
 				
 				collectMetrics(tasks, accounts.size(), namespaceMetrics);
 				return metricsProcessor.createMetricStatsMapForUpload(namespaceMetrics);
+				
+			} catch (Exception e) {
+				throw new AwsException(
+						String.format(
+								"Error getting NamespaceMetricStatistics for Namespace [%s]",
+								metricsProcessor.getNamespace()), e);
 				
 			} finally {
 				if (threadPool != null && !threadPool.isShutdown()) {
@@ -106,6 +121,8 @@ public class NamespaceMetricStatisticsCollector implements Callable<Map<String, 
 						.withMetricsTimeRange(metricsConfig.getMetricsTimeRange())
 						.withNoOfMetricThreadsPerRegion(concurrencyConfig.getNoOfMetricThreadsPerRegion())
 						.withNoOfRegionThreadsPerAccount(concurrencyConfig.getNoOfRegionThreadsPerAccount())
+						.withCredentialsDecryptionConfig(credentialsDecryptionConfig)
+						.withProxyConfig(proxyConfig)
 						.build();
 					
 			accountTasks.submit(accountTask);
@@ -138,4 +155,41 @@ public class NamespaceMetricStatisticsCollector implements Callable<Map<String, 
 		return noOfAccountThreads > 0 ? noOfAccountThreads : DEFAULT_NO_OF_THREADS;
 	}
 
+    /**
+     * Builder class to maintain readability when 
+     * building {@link NamespaceMetricStatisticsCollector} due to its params size
+     */
+	public static class Builder {
+		
+		private List<Account> accounts;
+		private MetricsConfig metricsConfig;
+		private ConcurrencyConfig concurrencyConfig;
+		private MetricsProcessor metricsProcessor;
+		private CredentialsDecryptionConfig credentialsDecryptionConfig;
+		private ProxyConfig proxyConfig;
+
+		public Builder(List<Account> accounts,
+				ConcurrencyConfig concurrencyConfig,
+				MetricsConfig metricsConfig, 
+				MetricsProcessor metricsProcessor) {
+			this.accounts = accounts;
+			this.concurrencyConfig = concurrencyConfig;
+			this.metricsConfig = metricsConfig;
+			this.metricsProcessor = metricsProcessor;
+		}
+		
+		public Builder withCredentialsEncryptionConfig(CredentialsDecryptionConfig credentialsDecryptionConfig) {
+			this.credentialsDecryptionConfig = credentialsDecryptionConfig;
+			return this;
+		}
+		
+		public Builder withProxyConfig(ProxyConfig proxyConfig) {
+			this.proxyConfig = proxyConfig;
+			return this;
+		}
+		
+		public NamespaceMetricStatisticsCollector build() {
+			return new NamespaceMetricStatisticsCollector(this);
+		}
+	}
 }

@@ -201,11 +201,16 @@ public class MetricsProcessorHelper {
 
 			String awsMetricName = metricStats.getMetric().getMetricName();
 			
-			if (StringUtils.isNotBlank(metricStats.getUnit())) {
-				awsMetricName = String.format("%s (%s)", awsMetricName, metricStats.getUnit());
-			}
+			/*
+			 *  Commented out for now as unit isn't available when there's no datapoint,
+			 *  so could result in duplicate metric registration when eventually it becomes available, 
+			 *  i.e. with and without unit
+			 */
+			//if (StringUtils.isNotBlank(metricStats.getUnit())) {
+			//	awsMetricName = String.format("%s (%s)", awsMetricName, metricStats.getUnit());
+			//}
 			
-			// e.g. MyTestAccount|us-east-1|Cache Cluster|mycachecluster|Cache Node|0001|CPUUtilization (Percent)
+			// e.g. MyTestAccount|us-east-1|Cache Cluster|mycachecluster|Cache Node|0001|CPUUtilization
 			String fullMetricPath = buildMetricName(partialMetricPath, awsMetricName, false);
 			statsMap.put(fullMetricPath, metricStats.getValue());
 		}

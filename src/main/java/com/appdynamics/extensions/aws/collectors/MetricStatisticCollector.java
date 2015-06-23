@@ -1,6 +1,7 @@
 package com.appdynamics.extensions.aws.collectors;
 
 import static com.appdynamics.extensions.aws.Constants.*;
+import static com.appdynamics.extensions.aws.validators.Validator.*;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -53,21 +54,16 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 	
 	private int endTimeInMinsBeforeNow;
 	
-	private MetricStatisticCollector(String accountName,
-			String region,
-			AmazonCloudWatch awsCloudWatch, 
-			Metric metric,
-			StatisticType statType, 
-			MetricsTimeRange metricsTimeRange) {
+	private MetricStatisticCollector(Builder builder) {
 		
-		this.accountName = accountName;
-		this.region = region;
-		this.awsCloudWatch = awsCloudWatch;
-		this.metric = metric;
-		this.statType = statType;
+		this.accountName = builder.accountName;
+		this.region = builder.region;
+		this.awsCloudWatch = builder.awsCloudWatch;
+		this.metric = builder.metric;
+		this.statType = builder.statType;
 		
-		setStartTimeInMinsBeforeNow(metricsTimeRange.getStartTimeInMinsBeforeNow());
-		setEndTimeInMinsBeforeNow(metricsTimeRange.getEndTimeInMinsBeforeNow());
+		setStartTimeInMinsBeforeNow(builder.metricsTimeRange.getStartTimeInMinsBeforeNow());
+		setEndTimeInMinsBeforeNow(builder.metricsTimeRange.getEndTimeInMinsBeforeNow());
 	}
 
 	/**
@@ -80,7 +76,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 		MetricStatistic metricStatistic = null;
 		
 		try{
-			validateStartAndEndTime();
+			validateTimeRange(startTimeInMinsBeforeNow, endTimeInMinsBeforeNow);
 			
 			if (LOGGER.isTraceEnabled()) {
 				LOGGER.trace(String.format("Collecting MetricStatistic for Namespace [%s] "
@@ -213,14 +209,6 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
     			DEFAULT_END_TIME_IN_MINS_BEFORE_NOW : endTimeInMinsBeforeNow;
     }
     
-    private void validateStartAndEndTime() {
-    	if (endTimeInMinsBeforeNow > startTimeInMinsBeforeNow) {
-    		throw new IllegalArgumentException(String.format(
-    				"endTimeInMinsBeforeNow [%s] must not be greater than startTimeInMinsBeforeNow [%s]",
-    				endTimeInMinsBeforeNow, startTimeInMinsBeforeNow));
-    	}
-    }
-    
     /**
      * Builder class to maintain readability when 
      * building {@link MetricStatisticCollector} due to its params size
@@ -270,13 +258,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
     	}
     	
     	public MetricStatisticCollector build() {
-    		return new MetricStatisticCollector(
-    				accountName,
-    				region,
-    				awsCloudWatch, 
-    				metric, 
-    				statType, 
-    				metricsTimeRange);
+    		return new MetricStatisticCollector(this);
     	}
     }
 }
