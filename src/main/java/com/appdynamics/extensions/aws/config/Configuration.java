@@ -10,6 +10,10 @@ public class Configuration {
 	
 	private List<Account> accounts;
 	
+	private CredentialsDecryptionConfig credentialsDecryptionConfig;
+	
+	private ProxyConfig proxyConfig;
+	
 	private MetricsConfig metricsConfig;
 	
 	private ConcurrencyConfig concurrencyConfig;
@@ -22,6 +26,23 @@ public class Configuration {
 
 	public void setAccounts(List<Account> accounts) {
 		this.accounts = accounts;
+	}
+	
+	public CredentialsDecryptionConfig getCredentialsDecryptionConfig() {
+		return credentialsDecryptionConfig;
+	}
+
+	public void setCredentialsDecryptionConfig(
+			CredentialsDecryptionConfig credentialsDecryptionConfig) {
+		this.credentialsDecryptionConfig = credentialsDecryptionConfig;
+	}
+
+	public ProxyConfig getProxyConfig() {
+		return proxyConfig;
+	}
+
+	public void setProxyConfig(ProxyConfig proxyConfig) {
+		this.proxyConfig = proxyConfig;
 	}
 
 	public MetricsConfig getMetricsConfig() {

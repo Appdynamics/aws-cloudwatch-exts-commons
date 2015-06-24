@@ -3,10 +3,11 @@ package com.appdynamics.extensions.aws;
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_THREAD_TIMEOUT;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionService;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -29,16 +30,22 @@ public abstract class MultipleNamespaceCloudwatchMonitor<T> extends AWSCloudwatc
 
 	@Override
 	protected Map<String, Double> getStatsForUpload(T config) {
-		Map<String, Double> allNamespacesStats = new ConcurrentHashMap<String, Double>();
+		Map<String, Double> allNamespacesStats = 
+				Collections.synchronizedMap(new HashMap<String, Double>());
 		
 		ExecutorService threadPool = null;
 
 		try {
+			List<NamespaceMetricStatisticsCollector> namespaceMetricsCollectors = 
+					getNamespaceMetricStatisticsCollectorList(config);
+			
 			threadPool = Executors.newFixedThreadPool(getNoOfNamespaceThreadsToUse(config));
+			
 			CompletionService<Map<String, Double>> tasks = 
-					createConcurrentAccountTasks(threadPool);
+					createConcurrentAccountTasks(threadPool, namespaceMetricsCollectors);
+			
 			collectMetrics(tasks,
-					getNamespaceMetricStatisticsCollectorList().size(),
+					namespaceMetricsCollectors.size(),
 					allNamespacesStats);
 			
 		} finally {
@@ -51,11 +58,12 @@ public abstract class MultipleNamespaceCloudwatchMonitor<T> extends AWSCloudwatc
 	}
 
 	private CompletionService<Map<String, Double>> createConcurrentAccountTasks(
-			ExecutorService threadPool) {
-		CompletionService<Map<String, Double>> namespaceCollectorTasks = new ExecutorCompletionService<Map<String, Double>>(
-				threadPool);
+			ExecutorService threadPool,
+			List<NamespaceMetricStatisticsCollector> namespaceMetricsCollectors) {
+		CompletionService<Map<String, Double>> namespaceCollectorTasks = 
+				new ExecutorCompletionService<Map<String, Double>>(threadPool);
 
-		for (NamespaceMetricStatisticsCollector namespaceCollector : getNamespaceMetricStatisticsCollectorList()) {
+		for (NamespaceMetricStatisticsCollector namespaceCollector : namespaceMetricsCollectors) {
 			namespaceCollectorTasks.submit(namespaceCollector);
 		}
 
@@ -69,6 +77,7 @@ public abstract class MultipleNamespaceCloudwatchMonitor<T> extends AWSCloudwatc
 			try {
 				Map<String, Double> namespaceStats = 
 						parallelTasks.take().get(DEFAULT_THREAD_TIMEOUT, TimeUnit.SECONDS);
+				
 				allNamespacesStats.putAll(namespaceStats);
 				
 			} catch (InterruptedException e) {
@@ -86,7 +95,7 @@ public abstract class MultipleNamespaceCloudwatchMonitor<T> extends AWSCloudwatc
 		return noOfThreads > 0 ? noOfThreads : DEFAULT_NO_OF_THREADS;
 	}
 
-	protected abstract List<NamespaceMetricStatisticsCollector> getNamespaceMetricStatisticsCollectorList();
+	protected abstract List<NamespaceMetricStatisticsCollector> getNamespaceMetricStatisticsCollectorList(T config);
 
 	protected abstract int getNoOfNamespaceThreads(T config);
 }

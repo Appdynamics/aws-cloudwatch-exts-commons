@@ -7,7 +7,6 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import java.util.ArrayList;
@@ -38,7 +37,6 @@ import com.google.common.collect.Lists;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({RegionEndpointProvider.class, 
-	RegionMetricStatisticsCollector.Builder.class,
 	RegionMetricStatisticsCollector.class,
 	ExecutorCompletionService.class})
 @PowerMockIgnore({"org.apache.*, javax.xml.*"})
@@ -64,7 +62,6 @@ public class RegionMetricStatisticsCollectorTest {
 	@Before
 	public void setUp() throws Exception {
 		mockStatic(RegionEndpointProvider.class);
-		mockStatic(RegionMetricStatisticsCollector.Builder.class);
 		when(RegionEndpointProvider.getInstance()).thenReturn(mockRegionEndpointProvider);
 		whenNew(AmazonCloudWatchClient.class).withArguments(mockAWSCredentials, mockAwsClientConfig)
 			.thenReturn(mockAwsCloudWatch);
@@ -74,11 +71,11 @@ public class RegionMetricStatisticsCollectorTest {
 	public void testInvalidRegionThrowsException() throws Exception {
 		when(mockRegionEndpointProvider.getEndpoint(anyString())).thenReturn(null);
 		
-		classUnderTest = spy(new RegionMetricStatisticsCollector.Builder()
+		classUnderTest = new RegionMetricStatisticsCollector.Builder()
 							.withAmazonCloudWatchConfig(mockAWSCredentials, mockAwsClientConfig)
 							.withMetricsProcessor(mockMetricsProcessor)
 							.withRegion("invalid")
-							.build());
+							.build();
 		
 		classUnderTest.call();
 	}
@@ -90,11 +87,11 @@ public class RegionMetricStatisticsCollectorTest {
 		
 		String testRegion = "testRegion";
 		
-		classUnderTest = spy(new RegionMetricStatisticsCollector.Builder()
+		classUnderTest = new RegionMetricStatisticsCollector.Builder()
 			.withAmazonCloudWatchConfig(mockAWSCredentials, mockAwsClientConfig)
 			.withMetricsProcessor(mockMetricsProcessor)
 			.withRegion(testRegion)
-			.build());
+			.build();
 		
 		RegionMetricStatistics result = classUnderTest.call();
 		
@@ -130,12 +127,12 @@ public class RegionMetricStatisticsCollectorTest {
 		
 		String testRegion = "testRegion";
 		
-		classUnderTest = spy(new RegionMetricStatisticsCollector.Builder()
+		classUnderTest = new RegionMetricStatisticsCollector.Builder()
 			.withAmazonCloudWatchConfig(mockAWSCredentials, mockAwsClientConfig)
 			.withMetricsProcessor(mockMetricsProcessor)
 			.withMetricsTimeRange(new MetricsTimeRange())
 			.withRegion(testRegion)
-			.build());
+			.build();
 		
 		RegionMetricStatistics result = classUnderTest.call();
 		

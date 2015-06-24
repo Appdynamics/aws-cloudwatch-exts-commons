@@ -1,6 +1,7 @@
 package com.appdynamics.extensions.aws.collectors;
 
 import static com.appdynamics.extensions.aws.Constants.*;
+import static com.appdynamics.extensions.aws.validators.Validator.*;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -12,7 +13,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.ClientConfiguration;
@@ -49,20 +49,15 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 	
 	private AmazonCloudWatch awsCloudWatch;
 	
-	private RegionMetricStatisticsCollector(String accountName,
-			String region,
-			AmazonCloudWatch awsCloudWatch,
-			int noOfMetricThreadsPerRegion,
-			MetricsTimeRange metricsTimeRange,
-			MetricsProcessor metricsProcessor) {
+	private RegionMetricStatisticsCollector(Builder builder) {
 
-		this.accountName = accountName;
-		this.region = region;
-		this.awsCloudWatch = awsCloudWatch;
-		this.metricsTimeRange = metricsTimeRange;
-		this.metricsProcessor = metricsProcessor;
+		this.accountName = builder.accountName;
+		this.region = builder.region;
+		this.awsCloudWatch = builder.awsCloudWatch;
+		this.metricsTimeRange = builder.metricsTimeRange;
+		this.metricsProcessor = builder.metricsProcessor;
 		
-		setNoOfMetricThreadsPerRegion(noOfMetricThreadsPerRegion);
+		setNoOfMetricThreadsPerRegion(builder.noOfMetricThreadsPerRegion);
 	}
 
 	/**
@@ -80,7 +75,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 			RegionEndpointProvider regionEndpointProvider = 
 					RegionEndpointProvider.getInstance();
 			
-			validateRegion(regionEndpointProvider);
+			validateRegion(region, regionEndpointProvider);
 			
 			LOGGER.info(String.format(
 					"Collecting RegionMetricStatistics for Namespace [%s] Account [%s] Region [%s]",
@@ -165,13 +160,6 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 				noOfMetricThreadsPerRegion : DEFAULT_NO_OF_THREADS;
 	}
 	
-	private void validateRegion(RegionEndpointProvider regionEndpointProvider) {
-		if (StringUtils.isBlank(regionEndpointProvider.getEndpoint(region))) {
-			throw new IllegalArgumentException(String.format(
-					"Invalid region [%s]", region));
-		}
-	}
-	
     /**
      * Builder class to maintain readability when 
      * building {@link RegionMetricStatisticsCollector} due to its params size
@@ -222,12 +210,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 		}
 		
 		public RegionMetricStatisticsCollector build() {
-			return new RegionMetricStatisticsCollector(accountName, 
-					region, 
-					awsCloudWatch, 
-					noOfMetricThreadsPerRegion, 
-					metricsTimeRange, 
-					metricsProcessor);
+			return new RegionMetricStatisticsCollector(this);
 		}
 	}
 }

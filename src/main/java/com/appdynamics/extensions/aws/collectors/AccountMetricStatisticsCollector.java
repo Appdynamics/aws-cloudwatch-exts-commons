@@ -1,6 +1,8 @@
 package com.appdynamics.extensions.aws.collectors;
 
 import static com.appdynamics.extensions.aws.Constants.*;
+import static com.appdynamics.extensions.aws.validators.Validator.*;
+import static com.appdynamics.extensions.aws.util.AWSUtil.*;
 
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -19,11 +21,14 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.appdynamics.extensions.aws.config.Account;
+import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
+import com.appdynamics.extensions.aws.config.ProxyConfig;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
+import com.appdynamics.extensions.crypto.Decryptor;
 
 /**
  * Collects statistics (of specified regions) for specified account
@@ -47,19 +52,20 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 	
 	private int maxErrorRetrySize;
 	
-	private AccountMetricStatisticsCollector(Account account,
-			int noOfRegionThreadsPerAccount, 
-			int noOfMetricThreadsPerRegion,
-			MetricsTimeRange metricsTimeRange, 
-			MetricsProcessor metricsProcessor,
-			int maxErrorRetrySize) {
-		this.account = account;
-		this.noOfMetricThreadsPerRegion = noOfMetricThreadsPerRegion;
-		this.metricsTimeRange = metricsTimeRange;
-		this.metricsProcessor = metricsProcessor;
+	private CredentialsDecryptionConfig credentialsDecryptionConfig;
+	
+	private ProxyConfig proxyConfig;
+	
+	private AccountMetricStatisticsCollector(Builder builder) {
+		this.account = builder.account;
+		this.noOfMetricThreadsPerRegion = builder.noOfMetricThreadsPerRegion;
+		this.metricsTimeRange = builder.metricsTimeRange;
+		this.metricsProcessor = builder.metricsProcessor;
+		this.credentialsDecryptionConfig = builder.credentialsDecryptionConfig;
+		this.proxyConfig = builder.proxyConfig;
 		
-		setNoOfRegionThreadsPerAccount(noOfRegionThreadsPerAccount);
-		setMaxErrorRetrySize(maxErrorRetrySize);
+		setNoOfRegionThreadsPerAccount(builder.noOfRegionThreadsPerAccount);
+		setMaxErrorRetrySize(builder.maxErrorRetrySize);
 	}
 	
 	/**
@@ -73,7 +79,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 		ExecutorService threadPool = null;
 			
 		try {
-			validateAccount();
+			validateAccount(account);
 			
 			LOGGER.info(String.format(
 					"Collecting AccountMetricStatistics for Namespace [%s] Account [%s]",
@@ -82,11 +88,8 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 			accountStats = new AccountMetricStatistics();
 			accountStats.setAccountName(account.getDisplayAccountName());
 
-			AWSCredentials awsCredentials = new BasicAWSCredentials(
-					account.getAwsAccessKey(), account.getAwsSecretKey());
-
-			ClientConfiguration awsClientConfig = new ClientConfiguration();
-			awsClientConfig.setMaxErrorRetry(maxErrorRetrySize);
+			AWSCredentials awsCredentials = createAWSCredentials(account, credentialsDecryptionConfig);
+			ClientConfiguration awsClientConfig = createAWSClientConfiguration(maxErrorRetrySize, proxyConfig);
 
 			threadPool = Executors.newFixedThreadPool(noOfRegionThreadsPerAccount);
 			CompletionService<RegionMetricStatistics> tasks = createConcurrentRegionTasks(
@@ -166,28 +169,6 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 				noOfRegionThreadsPerAccount : DEFAULT_NO_OF_THREADS;
 	}
 	
-	private void validateAccount() {
-		if (StringUtils.isBlank(account.getAwsAccessKey())) {
-			throw new IllegalArgumentException("You must provide the aws access key");
-		}
-		
-		if (StringUtils.isBlank(account.getAwsSecretKey())) {
-			throw new IllegalArgumentException("You must provide the aws secret key");
-		}
-		
-		if (StringUtils.isBlank(account.getDisplayAccountName())) {
-			throw new IllegalArgumentException(
-					String.format("You must provide a display name for account with aws access key [%s]",
-							account.getAwsAccessKey()));
-		}
-		
-		if (account.getRegions() == null || account.getRegions().isEmpty()) {
-			throw new IllegalArgumentException(
-					String.format("You must provide at least one region for Account [%s]",
-							account.getDisplayAccountName()));
-		}
-	}
-	
     /**
      * Builder class to maintain readability when 
      * building {@link AccountMetricStatisticsCollector} due to its params size
@@ -200,6 +181,8 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 		private MetricsTimeRange metricsTimeRange;
 		private MetricsProcessor metricsProcessor;
 		private int maxErrorRetrySize;
+		private CredentialsDecryptionConfig credentialsDecryptionConfig;
+		private ProxyConfig proxyConfig;
 		
 		public Builder withAccount(Account account) {
 			this.account = account;
@@ -231,15 +214,19 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 			return this;
 		}
 		
-		public AccountMetricStatisticsCollector build() {
-			return new AccountMetricStatisticsCollector(account, 
-					noOfRegionThreadsPerAccount, 
-					noOfMetricThreadsPerRegion, 
-					metricsTimeRange, 
-					metricsProcessor, 
-					maxErrorRetrySize);
+		public Builder withCredentialsDecryptionConfig(CredentialsDecryptionConfig credentialsDecryptionConfig) {
+			this.credentialsDecryptionConfig = credentialsDecryptionConfig;
+			return this;
 		}
 		
+		public Builder withProxyConfig(ProxyConfig proxyConfig) {
+			this.proxyConfig = proxyConfig;
+			return this;
+		}
+		
+		public AccountMetricStatisticsCollector build() {
+			return new AccountMetricStatisticsCollector(this);
+		}
 	}
 
 }

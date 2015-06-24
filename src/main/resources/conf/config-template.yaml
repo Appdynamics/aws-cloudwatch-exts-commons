@@ -1,13 +1,23 @@
 accounts:
   - awsAccessKey: ""
     awsSecretKey: ""
-    displayAccountName: ""
+    displayAccountName: "" 
     
     # Regions where namespace is registered
     # Allowed values: ap-southeast-1, ap-southeast-2, ap-northeast-1, eu-central-1, 
     #                 us-east-1, eu-west-1, us-west-1, us-west-2, sa-east-1
     #
     regions: ["us-east-1"]
+    
+credentialsDecryptionConfig:
+    enableDecryption: "false"
+    decryptionKey:
+    
+proxyConfig:
+    host:
+    port:
+    username:
+    password:
 
 # Global metrics config for all accounts
 metricsConfig:

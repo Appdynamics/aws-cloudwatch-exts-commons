@@ -44,9 +44,7 @@ public abstract class AWSCloudwatchMonitor<T> extends AManagedMonitor {
 				String configFilename = resolvePath(args.get(CONFIG_ARG));
 				T config = readFromFile(configFilename, clazz);
 				
-				RegionEndpointProvider regionEndpointProvider = 
-						RegionEndpointProvider.getInstance();
-				regionEndpointProvider.initialise(args.get(CONFIG_REGION_ENDPOINTS_ARG));
+				initialiseServiceProviders(config, args);
 				
 				Map<String, Double> statsForUpload = getStatsForUpload(config);
 				uploadStats(statsForUpload, config);
@@ -62,6 +60,12 @@ public abstract class AWSCloudwatchMonitor<T> extends AManagedMonitor {
 				"AWS Cloudwatch Monitoring task completed with failures.");
 	}
 	
+	protected void initialiseServiceProviders(T config, Map<String, String> paramArgs) {
+		RegionEndpointProvider regionEndpointProvider = 
+				RegionEndpointProvider.getInstance();
+		regionEndpointProvider.initialise(paramArgs.get(CONFIG_REGION_ENDPOINTS_ARG));		
+	}
+
 	private void uploadStats(Map<String, Double> statsForUpload, T config) {
 		String metricPrefix = doGetMetricPrefix(config);
 		
