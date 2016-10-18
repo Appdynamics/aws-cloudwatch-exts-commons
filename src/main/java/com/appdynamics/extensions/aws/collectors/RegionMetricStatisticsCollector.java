@@ -200,7 +200,12 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 		
 		public Builder withAmazonCloudWatchConfig(AWSCredentials awsCredentials, 
 				ClientConfiguration awsClientConfig) {
-			this.awsCloudWatch = new AmazonCloudWatchClient(awsCredentials, awsClientConfig);
+			if (awsCredentials == null) {
+				this.awsCloudWatch = new AmazonCloudWatchClient(awsClientConfig);
+			}
+			else {
+				this.awsCloudWatch = new AmazonCloudWatchClient(awsCredentials, awsClientConfig);
+			}
 			return this;
 		}
 		

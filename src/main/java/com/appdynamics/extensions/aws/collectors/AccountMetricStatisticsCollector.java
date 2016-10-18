@@ -88,7 +88,10 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 			accountStats = new AccountMetricStatistics();
 			accountStats.setAccountName(account.getDisplayAccountName());
 
-			AWSCredentials awsCredentials = createAWSCredentials(account, credentialsDecryptionConfig);
+			AWSCredentials awsCredentials = null;
+			if (StringUtils.isNotEmpty(account.getAwsAccessKey()) && StringUtils.isNotEmpty(account.getAwsSecretKey())) {
+				awsCredentials = createAWSCredentials(account, credentialsDecryptionConfig);
+			}
 			ClientConfiguration awsClientConfig = createAWSClientConfiguration(maxErrorRetrySize, proxyConfig);
 
 			threadPool = Executors.newFixedThreadPool(noOfRegionThreadsPerAccount);

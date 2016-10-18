@@ -18,25 +18,7 @@ public class Validator {
 	}
 
 	public static void validateAccount(Account account) {
-		if (StringUtils.isBlank(account.getAwsAccessKey())) {
-			throw new IllegalArgumentException("You must provide the aws access key");
-		}
 		
-		if (StringUtils.isBlank(account.getAwsSecretKey())) {
-			throw new IllegalArgumentException("You must provide the aws secret key");
-		}
-		
-		if (StringUtils.isBlank(account.getDisplayAccountName())) {
-			throw new IllegalArgumentException(
-					String.format("You must provide a display name for account with aws access key [%s]",
-							account.getAwsAccessKey()));
-		}
-		
-		if (account.getRegions() == null || account.getRegions().isEmpty()) {
-			throw new IllegalArgumentException(
-					String.format("You must provide at least one region for Account [%s]",
-							account.getDisplayAccountName()));
-		}
 	}
 	
 	public static void validateRegion(String region, RegionEndpointProvider regionEndpointProvider) {
