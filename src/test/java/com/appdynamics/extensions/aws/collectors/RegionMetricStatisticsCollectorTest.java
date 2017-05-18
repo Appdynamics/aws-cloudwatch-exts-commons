@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -55,6 +56,8 @@ public class RegionMetricStatisticsCollectorTest {
 	
 	@Mock
 	private MetricsProcessor mockMetricsProcessor;
+
+
 	
 	@Mock
 	private RegionEndpointProvider mockRegionEndpointProvider;
@@ -83,7 +86,7 @@ public class RegionMetricStatisticsCollectorTest {
 	@Test
 	public void testNoMetricsToProcessReturnsEmptyStats() throws Exception {
 		when(mockRegionEndpointProvider.getEndpoint(anyString())).thenReturn("test-endpoint");
-		when(mockMetricsProcessor.getMetrics(mockAwsCloudWatch)).thenReturn(new ArrayList<Metric>());
+		when(mockMetricsProcessor.getMetrics(eq(mockAwsCloudWatch), anyString())).thenReturn(new ArrayList<Metric>());
 		
 		String testRegion = "testRegion";
 		
@@ -104,7 +107,7 @@ public class RegionMetricStatisticsCollectorTest {
 		when(mockRegionEndpointProvider.getEndpoint(anyString())).thenReturn("test-endpoint");
 		
 		List<Metric> testMetrics = getTestMetrics();
-		when(mockMetricsProcessor.getMetrics(mockAwsCloudWatch)).thenReturn(testMetrics);
+		when(mockMetricsProcessor.getMetrics(eq(mockAwsCloudWatch), anyString())).thenReturn(testMetrics);
 		
 		MetricStatisticCollector mockMetricStatsCollector1 = mock(MetricStatisticCollector.class);
 		MetricStatistic metricStatistic1 = createTestMetricStatistics(testMetrics.get(0));

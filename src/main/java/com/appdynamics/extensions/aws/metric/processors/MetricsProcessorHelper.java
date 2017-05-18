@@ -14,6 +14,9 @@ import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.StatisticType;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -43,6 +46,16 @@ public class MetricsProcessorHelper {
         List<Metric> metrics = getMetrics(awsCloudWatch, namespace, dimensions);
         return filterMetrics(metrics, excludeMetrics);
     }
+
+    public static List<Metric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
+                                                  String namespace, Pattern excludeMetrics, List<DimensionFilter> dimensions, Predicate<Metric> metricFilter) {
+        List<Metric> metrics = getMetrics(awsCloudWatch, namespace, dimensions);
+
+        metrics = Lists.newArrayList(Collections2.filter(metrics, metricFilter));
+
+        return filterMetrics(metrics, excludeMetrics);
+    }
+
 
     public static List<Metric> getMetrics(AmazonCloudWatch awsCloudWatch,
                                           String namespace, String... dimensionNames) {

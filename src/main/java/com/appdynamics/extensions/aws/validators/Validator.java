@@ -18,7 +18,7 @@ public class Validator {
 	}
 
 	public static void validateAccount(Account account) {
-		if (StringUtils.isBlank(account.getAwsAccessKey())) {
+		/*if (StringUtils.isBlank(account.getAwsAccessKey())) {
 			throw new IllegalArgumentException("You must provide the aws access key");
 		}
 		
@@ -36,7 +36,7 @@ public class Validator {
 			throw new IllegalArgumentException(
 					String.format("You must provide at least one region for Account [%s]",
 							account.getDisplayAccountName()));
-		}
+		}*/
 	}
 	
 	public static void validateRegion(String region, RegionEndpointProvider regionEndpointProvider) {
