@@ -85,6 +85,8 @@ public class AWSUtil {
         return awsClientConfig;
     }
 
+    //methods to ensure that the aws access keys do not get checked in by a developer
+
     public static List<String> getAWSSecretKeysFromCfg(File[] configFiles) {
         List<String> secretKeysFromCfg = Lists.newArrayList();
         for (File configFile : configFiles) {
