@@ -1,3 +1,10 @@
+/*
+ * Copyright 2018. AppDynamics LLC and its affiliates.
+ * All Rights Reserved.
+ * This is unpublished proprietary source code of AppDynamics LLC and its affiliates.
+ * The copyright notice above does not evidence any actual or intended publication of such source code.
+ */
+
 package com.appdynamics.extensions.aws.collectors;
 
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_MAX_ERROR_RETRY;
@@ -17,6 +24,7 @@ import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
+import com.google.common.util.concurrent.RateLimiter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -29,6 +37,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Collects statistics (of specified regions) for specified account
@@ -55,6 +64,11 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
     private ProxyConfig proxyConfig;
 
+    private RateLimiter rateLimiter;
+    private LongAdder awsRequestsCounter;
+
+    private String metricPrefix;
+
     private AccountMetricStatisticsCollector(Builder builder) {
         this.account = builder.account;
         this.noOfMetricThreadsPerRegion = builder.noOfMetricThreadsPerRegion;
@@ -62,6 +76,9 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         this.metricsProcessor = builder.metricsProcessor;
         this.credentialsDecryptionConfig = builder.credentialsDecryptionConfig;
         this.proxyConfig = builder.proxyConfig;
+        this.rateLimiter = builder.rateLimiter;
+        this.awsRequestsCounter = builder.awsRequestsCounter;
+        this.metricPrefix = builder.metricPrefix;
 
         setNoOfRegionThreadsPerAccount(builder.noOfRegionThreadsPerAccount);
         setMaxErrorRetrySize(builder.maxErrorRetrySize);
@@ -134,6 +151,9 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
                             .withMetricsTimeRange(metricsTimeRange)
                             .withNoOfMetricThreadsPerRegion(noOfMetricThreadsPerRegion)
                             .withRegion(region)
+                            .withRateLimiter(rateLimiter)
+                            .withAWSRequestCounter(awsRequestsCounter)
+                            .withPrefix(metricPrefix)
                             .build();
 
             regionTasks.submit(regionTask);
@@ -186,6 +206,9 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         private int maxErrorRetrySize;
         private CredentialsDecryptionConfig credentialsDecryptionConfig;
         private ProxyConfig proxyConfig;
+        private RateLimiter rateLimiter;
+        private LongAdder awsRequestsCounter;
+        private String metricPrefix;
 
         public Builder withAccount(Account account) {
             this.account = account;
@@ -227,8 +250,23 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
             return this;
         }
 
+        public Builder withRateLimiter(RateLimiter rateLimiter) {
+            this.rateLimiter = rateLimiter;
+            return this;
+        }
+
+        public Builder withAWSRequestCounter(LongAdder awsRequestsCounter) {
+            this.awsRequestsCounter = awsRequestsCounter;
+            return this;
+        }
+
         public AccountMetricStatisticsCollector build() {
             return new AccountMetricStatisticsCollector(this);
+        }
+
+        public Builder withPrefix(String metricPrefix) {
+            this.metricPrefix = metricPrefix;
+            return this;
         }
     }
 

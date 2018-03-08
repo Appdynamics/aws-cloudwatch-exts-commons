@@ -1,52 +1,77 @@
+/*
+ * Copyright 2018. AppDynamics LLC and its affiliates.
+ * All Rights Reserved.
+ * This is unpublished proprietary source code of AppDynamics LLC and its affiliates.
+ * The copyright notice above does not evidence any actual or intended publication of such source code.
+ */
+
 package com.appdynamics.extensions.aws.config;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author Florencio Sarmiento
- *
  */
 public class MetricsConfig {
 
-	private List<MetricType> metricTypes;
+    private List<IncludeMetric> includeMetrics;
 
-	private Set<String> excludeMetrics;
-	
-	private MetricsTimeRange metricsTimeRange;
-	
-	private int maxErrorRetrySize;
+    private MetricsTimeRange metricsTimeRange;
 
-	public List<MetricType> getMetricTypes() {
-		return metricTypes;
-	}
+    private int metricsCollectionInterval;
 
-	public void setMetricTypes(List<MetricType> metricTypes) {
-		this.metricTypes = metricTypes;
-	}
+    private int metricsCacheExpiryInterval;
 
-	public Set<String> getExcludeMetrics() {
-		return excludeMetrics;
-	}
+    private int getMetricStatisticsRateLimit = 400;
 
-	public void setExcludeMetrics(Set<String> excludeMetrics) {
-		this.excludeMetrics = excludeMetrics;
-	}
+    private int maxErrorRetrySize;
 
-	public MetricsTimeRange getMetricsTimeRange() {
-		return metricsTimeRange;
-	}
+    public List<IncludeMetric> getIncludeMetrics() {
+        return includeMetrics;
+    }
 
-	public void setMetricsTimeRange(MetricsTimeRange metricsTimeRange) {
-		this.metricsTimeRange = metricsTimeRange;
-	}
+    public void setIncludeMetrics(List<IncludeMetric> includeMetrics) {
+        this.includeMetrics = includeMetrics;
+    }
 
-	public int getMaxErrorRetrySize() {
-		return maxErrorRetrySize;
-	}
+    public MetricsTimeRange getMetricsTimeRange() {
+        return metricsTimeRange;
+    }
 
-	public void setMaxErrorRetrySize(int maxErrorRetrySize) {
-		this.maxErrorRetrySize = maxErrorRetrySize;
-	}
+    public void setMetricsTimeRange(MetricsTimeRange metricsTimeRange) {
+        this.metricsTimeRange = metricsTimeRange;
+    }
+
+    public int getMetricsCollectionInterval() {
+        return metricsCollectionInterval;
+    }
+
+    public void setMetricsCollectionInterval(int metricsCollectionInterval) {
+        this.metricsCollectionInterval = metricsCollectionInterval;
+    }
+
+    public int getMetricsCacheExpiryInterval() {
+        return metricsCacheExpiryInterval;
+    }
+
+    public void setMetricsCacheExpiryInterval(int metricsCacheExpiryInterval) {
+        this.metricsCacheExpiryInterval = metricsCacheExpiryInterval;
+    }
+
+    public int getGetMetricStatisticsRateLimit() {
+        return getMetricStatisticsRateLimit;
+    }
+
+    public void setGetMetricStatisticsRateLimit(int getMetricStatisticsRateLimit) {
+        this.getMetricStatisticsRateLimit = getMetricStatisticsRateLimit;
+    }
+
+    public int getMaxErrorRetrySize() {
+        return maxErrorRetrySize;
+    }
+
+    public void setMaxErrorRetrySize(int maxErrorRetrySize) {
+        this.maxErrorRetrySize = maxErrorRetrySize;
+    }
 
 }

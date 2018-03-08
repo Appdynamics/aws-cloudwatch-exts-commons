@@ -1,71 +1,88 @@
+/*
+ * Copyright 2018. AppDynamics LLC and its affiliates.
+ * All Rights Reserved.
+ * This is unpublished proprietary source code of AppDynamics LLC and its affiliates.
+ * The copyright notice above does not evidence any actual or intended publication of such source code.
+ */
+
 package com.appdynamics.extensions.aws.config;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author Florencio Sarmiento
- *
  */
 public class Configuration {
-	
-	private List<Account> accounts;
-	
-	private CredentialsDecryptionConfig credentialsDecryptionConfig;
-	
-	private ProxyConfig proxyConfig;
-	
-	private MetricsConfig metricsConfig;
-	
-	private ConcurrencyConfig concurrencyConfig;
-	
-	private String metricPrefix;
-	
-	public List<Account> getAccounts() {
-		return accounts;
-	}
 
-	public void setAccounts(List<Account> accounts) {
-		this.accounts = accounts;
-	}
-	
-	public CredentialsDecryptionConfig getCredentialsDecryptionConfig() {
-		return credentialsDecryptionConfig;
-	}
+    private List<Account> accounts;
 
-	public void setCredentialsDecryptionConfig(
-			CredentialsDecryptionConfig credentialsDecryptionConfig) {
-		this.credentialsDecryptionConfig = credentialsDecryptionConfig;
-	}
+    private CredentialsDecryptionConfig credentialsDecryptionConfig;
 
-	public ProxyConfig getProxyConfig() {
-		return proxyConfig;
-	}
+    private ProxyConfig proxyConfig;
 
-	public void setProxyConfig(ProxyConfig proxyConfig) {
-		this.proxyConfig = proxyConfig;
-	}
+    private MetricsConfig metricsConfig;
 
-	public MetricsConfig getMetricsConfig() {
-		return metricsConfig;
-	}
+    private ConcurrencyConfig concurrencyConfig;
+    
+    private Map<String, String> regionEndPoints;
 
-	public void setMetricsConfig(MetricsConfig metricsConfig) {
-		this.metricsConfig = metricsConfig;
-	}
+    private String metricPrefix;
 
-	public ConcurrencyConfig getConcurrencyConfig() {
-		return concurrencyConfig;
-	}
+    public List<Account> getAccounts() {
+        return accounts;
+    }
 
-	public void setConcurrencyConfig(ConcurrencyConfig concurrencyConfig) {
-		this.concurrencyConfig = concurrencyConfig;
-	}
+    public void setAccounts(List<Account> accounts) {
+        this.accounts = accounts;
+    }
 
-	public String getMetricPrefix() {
-		return metricPrefix;
-	}
+    public CredentialsDecryptionConfig getCredentialsDecryptionConfig() {
+        return credentialsDecryptionConfig;
+    }
 
-	public void setMetricPrefix(String metricPrefix) {
-		this.metricPrefix = metricPrefix;
-	}
+    public void setCredentialsDecryptionConfig(
+            CredentialsDecryptionConfig credentialsDecryptionConfig) {
+        this.credentialsDecryptionConfig = credentialsDecryptionConfig;
+    }
+
+    public ProxyConfig getProxyConfig() {
+        return proxyConfig;
+    }
+
+    public void setProxyConfig(ProxyConfig proxyConfig) {
+        this.proxyConfig = proxyConfig;
+    }
+
+    public MetricsConfig getMetricsConfig() {
+        return metricsConfig;
+    }
+
+    public void setMetricsConfig(MetricsConfig metricsConfig) {
+        this.metricsConfig = metricsConfig;
+    }
+
+    public ConcurrencyConfig getConcurrencyConfig() {
+        return concurrencyConfig;
+    }
+
+    public void setConcurrencyConfig(ConcurrencyConfig concurrencyConfig) {
+        this.concurrencyConfig = concurrencyConfig;
+    }
+
+    public Map<String, String> getRegionEndPoints() {
+        return regionEndPoints;
+    }
+
+    public void setRegionEndPoints(Map<String, String> regionEndPoints) {
+        this.regionEndPoints = regionEndPoints;
+    }
+
+    public String getMetricPrefix() {
+        return metricPrefix;
+    }
+
+    public void setMetricPrefix(String metricPrefix) {
+        this.metricPrefix = metricPrefix;
+    }
 }

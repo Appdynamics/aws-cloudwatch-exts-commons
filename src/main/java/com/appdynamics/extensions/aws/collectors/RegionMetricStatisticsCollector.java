@@ -1,3 +1,10 @@
+/*
+ * Copyright 2018. AppDynamics LLC and its affiliates.
+ * All Rights Reserved.
+ * This is unpublished proprietary source code of AppDynamics LLC and its affiliates.
+ * The copyright notice above does not evidence any actual or intended publication of such source code.
+ */
+
 package com.appdynamics.extensions.aws.collectors;
 
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
@@ -9,14 +16,16 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
-import com.amazonaws.services.cloudwatch.model.Metric;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
+import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
 import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;
+import com.google.common.util.concurrent.RateLimiter;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -27,6 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Collects statistics (of specified metrics) for specified region.
@@ -49,6 +59,12 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
     private AmazonCloudWatch awsCloudWatch;
 
+    private RateLimiter rateLimiter;
+
+    private LongAdder awsRequestsCounter;
+
+    private String metricPrefix;
+
     private RegionMetricStatisticsCollector(Builder builder) {
 
         this.accountName = builder.accountName;
@@ -56,6 +72,9 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         this.awsCloudWatch = builder.awsCloudWatch;
         this.metricsTimeRange = builder.metricsTimeRange;
         this.metricsProcessor = builder.metricsProcessor;
+        this.rateLimiter = builder.rateLimiter;
+        this.awsRequestsCounter = builder.awsRequestsCounter;
+        this.metricPrefix = builder.metricPrefix;
 
         setNoOfMetricThreadsPerRegion(builder.noOfMetricThreadsPerRegion);
     }
@@ -82,7 +101,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                     metricsProcessor.getNamespace(), accountName, region));
 
             this.awsCloudWatch.setEndpoint(regionEndpointProvider.getEndpoint(region));
-            List<Metric> metrics = metricsProcessor.getMetrics(awsCloudWatch, accountName);
+            List<AWSMetric> metrics = metricsProcessor.getMetrics(awsCloudWatch, accountName, awsRequestsCounter);
 
             regionMetricStats = new RegionMetricStatistics();
             regionMetricStats.setRegion(region);
@@ -114,12 +133,17 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
     }
 
     private CompletionService<MetricStatistic> createConcurrentMetricTasks(ExecutorService threadPool,
-                                                                           List<Metric> metrics) {
+                                                                           List<AWSMetric> metrics) {
 
         CompletionService<MetricStatistic> metricTasks =
                 new ExecutorCompletionService<MetricStatistic>(threadPool);
 
-        for (Metric metric : metrics) {
+        long startTime = DateTime.now().getSecondOfMinute();
+        for (AWSMetric metric : metrics) {
+
+            //Limit the number of requests per second. Limit can be configured using getMetricStatisticsRateLimit config
+            rateLimiter.acquire();
+
             MetricStatisticCollector metricTask =
                     new MetricStatisticCollector.Builder()
                             .withAccountName(accountName)
@@ -128,10 +152,15 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                             .withMetric(metric)
                             .withMetricsTimeRange(metricsTimeRange)
                             .withStatType(metricsProcessor.getStatisticType(metric))
+                            .withAWSRequestCounter(awsRequestsCounter)
+                            .withPrefix(metricPrefix)
                             .build();
 
             metricTasks.submit(metricTask);
         }
+        long elapsedTimeSeconds = DateTime.now().getSecondOfMinute() - startTime;
+
+        LOGGER.debug("Get metric statistics took " + elapsedTimeSeconds);
 
         return metricTasks;
     }
@@ -178,6 +207,12 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         private AmazonCloudWatch awsCloudWatch;
 
+        private RateLimiter rateLimiter;
+
+        private LongAdder awsRequestsCounter;
+
+        private String metricPrefix;
+
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
             return this;
@@ -214,8 +249,23 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
             return this;
         }
 
+        public Builder withRateLimiter(RateLimiter rateLimiter) {
+            this.rateLimiter = rateLimiter;
+            return this;
+        }
+
+        public Builder withAWSRequestCounter(LongAdder awsRequestsCounter) {
+            this.awsRequestsCounter = awsRequestsCounter;
+            return this;
+        }
+
         public RegionMetricStatisticsCollector build() {
             return new RegionMetricStatisticsCollector(this);
+        }
+
+        public Builder withPrefix(String metricPrefix) {
+            this.metricPrefix = metricPrefix;
+            return this;
         }
     }
 }
