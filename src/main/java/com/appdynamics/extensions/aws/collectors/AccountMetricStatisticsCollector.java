@@ -111,6 +111,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
             ClientConfiguration awsClientConfig = createAWSClientConfiguration(maxErrorRetrySize, proxyConfig);
 
+            //TODO why create a new thread pool. Use the existing thread pool from the commons library
             threadPool = Executors.newFixedThreadPool(noOfRegionThreadsPerAccount);
             CompletionService<RegionMetricStatistics> tasks = createConcurrentRegionTasks(
                     threadPool, account.getRegions(), awsCredentials, awsClientConfig);

@@ -102,7 +102,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
 
                 collectMetrics(tasks, accounts.size(), namespaceMetrics);
                 List<Metric> metricStatsForUpload = metricsProcessor.createMetricStatsMapForUpload(namespaceMetrics);
-
+                //#TODO Name change to API calls
                 String total_requests = "Total Requests";
                 Metric metric = new Metric(total_requests, Double.toString(awsRequestsCounter.doubleValue()), metricPrefix + total_requests);
                 metricStatsForUpload.add(metric);

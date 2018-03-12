@@ -37,9 +37,9 @@ public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
 
         try {
 
+            //#TODO Should be done from onConfigReload(File file) method in ABaseMonitor.class (available from v2.0.4)
             Map<String, ?> configYml = configuration.getConfigYml();
             T config = parseConfig(configYml);
-
             initialize(config);
             
             List<Metric> statsForUpload = getStatsForUpload(config);
@@ -53,11 +53,11 @@ public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
 
     protected void initialiseRegionServiceProviders(T config) {
         Configuration thisConfig = (Configuration) config;
-
         RegionEndpointProvider regionEndpointProvider = RegionEndpointProvider.getInstance();
         regionEndpointProvider.initialise(thisConfig.getRegionEndPoints());
     }
 
+    //#TODO Can be done from snakeyml
     private T parseConfig(Map<String, ?> configYml) {
         Gson gson = new Gson();
         JsonElement jsonElement = gson.toJsonTree(configYml);
