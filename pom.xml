@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.appdynamics.extensions</groupId>
 	<artifactId>aws-cloudwatch-exts-commons</artifactId>
-	<version>1.0.5</version>
+	<version>1.0.6</version>
 	<name>AWS Cloudwatch Commons</name>
 	
 	<properties>
@@ -51,6 +51,11 @@
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-cloudwatch</artifactId>
 			<version>1.10.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.woodstox</groupId>
+			<artifactId>woodstox-core</artifactId>
+			<version>5.0.2</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
