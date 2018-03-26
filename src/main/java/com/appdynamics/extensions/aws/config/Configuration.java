@@ -24,10 +24,16 @@ public class Configuration {
     private MetricsConfig metricsConfig;
 
     private ConcurrencyConfig concurrencyConfig;
-    
+
     private Map<String, String> regionEndPoints;
 
     private String metricPrefix;
+
+    private TaskSchedule taskSchedule;
+
+    private String cloudWatchMonitoring;
+
+    private int cloudWatchMonitoringInterval;
 
     public List<Account> getAccounts() {
         return accounts;
@@ -84,5 +90,49 @@ public class Configuration {
 
     public void setMetricPrefix(String metricPrefix) {
         this.metricPrefix = metricPrefix;
+    }
+
+    public TaskSchedule getTaskSchedule() {
+        return taskSchedule;
+    }
+
+    public void setTaskSchedule(TaskSchedule taskSchedule) {
+        this.taskSchedule = taskSchedule;
+    }
+
+    public String getCloudWatchMonitoring() {
+        return cloudWatchMonitoring;
+    }
+
+    public void setCloudWatchMonitoring(String cloudWatchMonitoring) {
+
+        if (CloudWatchMonitoringLevel.BASIC.getLevel().equalsIgnoreCase(cloudWatchMonitoring) ||
+                CloudWatchMonitoringLevel.DETAILED.getLevel().equalsIgnoreCase(cloudWatchMonitoring)) {
+            this.cloudWatchMonitoring = cloudWatchMonitoring;
+        } else {
+            this.cloudWatchMonitoring = CloudWatchMonitoringLevel.BASIC.getLevel();
+        }
+    }
+
+    public int getCloudWatchMonitoringInterval() {
+        return cloudWatchMonitoringInterval;
+    }
+
+    public void setCloudWatchMonitoringInterval(int cloudWatchMonitoringInterval) {
+        this.cloudWatchMonitoringInterval = cloudWatchMonitoringInterval;
+    }
+
+    public enum CloudWatchMonitoringLevel {
+        BASIC("Basic"), DETAILED("Detailed");
+        private String level;
+
+        CloudWatchMonitoringLevel(String level) {
+            this.level = level;
+        }
+
+        public String getLevel() {
+            return level;
+        }
+
     }
 }

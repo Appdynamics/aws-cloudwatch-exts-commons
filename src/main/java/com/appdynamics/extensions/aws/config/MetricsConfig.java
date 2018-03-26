@@ -18,10 +18,6 @@ public class MetricsConfig {
 
     private MetricsTimeRange metricsTimeRange;
 
-    private int metricsCollectionInterval;
-
-    private int metricsCacheExpiryInterval;
-
     private int getMetricStatisticsRateLimit = 400;
 
     private int maxErrorRetrySize;
@@ -42,22 +38,6 @@ public class MetricsConfig {
         this.metricsTimeRange = metricsTimeRange;
     }
 
-    public int getMetricsCollectionInterval() {
-        return metricsCollectionInterval;
-    }
-
-    public void setMetricsCollectionInterval(int metricsCollectionInterval) {
-        this.metricsCollectionInterval = metricsCollectionInterval;
-    }
-
-    public int getMetricsCacheExpiryInterval() {
-        return metricsCacheExpiryInterval;
-    }
-
-    public void setMetricsCacheExpiryInterval(int metricsCacheExpiryInterval) {
-        this.metricsCacheExpiryInterval = metricsCacheExpiryInterval;
-    }
-
     public int getGetMetricStatisticsRateLimit() {
         return getMetricStatisticsRateLimit;
     }
@@ -73,5 +53,4 @@ public class MetricsConfig {
     public void setMaxErrorRetrySize(int maxErrorRetrySize) {
         this.maxErrorRetrySize = maxErrorRetrySize;
     }
-
 }

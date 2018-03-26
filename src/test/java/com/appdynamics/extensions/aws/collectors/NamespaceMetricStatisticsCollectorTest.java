@@ -98,8 +98,6 @@ public class NamespaceMetricStatisticsCollectorTest {
 
         when(mockBuilder.build()).thenReturn(mockAccountStatsCollector1, mockAccountStatsCollector2);
 
-        when(mockMetricsConfig.getMetricsCollectionInterval()).thenReturn(3);
-        when(mockMetricsConfig.getMetricsCacheExpiryInterval()).thenReturn(5);
         when(mockMetricsConfig.getGetMetricStatisticsRateLimit()).thenReturn(400);
 
         ArgumentCaptor<NamespaceMetricStatistics> argumentCaptor =

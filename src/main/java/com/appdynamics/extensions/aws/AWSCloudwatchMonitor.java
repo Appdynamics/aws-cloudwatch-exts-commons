@@ -10,12 +10,19 @@ package com.appdynamics.extensions.aws;
 import com.appdynamics.extensions.ABaseMonitor;
 import com.appdynamics.extensions.TasksExecutionServiceProvider;
 import com.appdynamics.extensions.aws.config.Configuration;
+import com.appdynamics.extensions.aws.config.TaskSchedule;
 import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;
+import com.appdynamics.extensions.conf.MonitorConfiguration;
+import com.appdynamics.extensions.conf.modules.JobScheduleModule;
 import com.appdynamics.extensions.metrics.Metric;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import org.apache.log4j.Logger;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,9 +33,76 @@ import java.util.Map;
 public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
 
     private Class<T> clazz;
+    private T config;
 
     public AWSCloudwatchMonitor(Class<T> clazz) {
         this.clazz = clazz;
+    }
+
+    @Override
+    protected void onConfigReload(File file) {
+        Yaml yaml = new Yaml();
+        try {
+            config = yaml.loadAs(new FileInputStream(file), clazz);
+        } catch (FileNotFoundException e) {
+            getLogger().error("Error wile reading the config file", e);
+        }
+
+        initialize(config);
+    }
+
+    @Override
+    protected void initializeMoreStuff(Map<String, String> args, MonitorConfiguration conf) {
+        Configuration configuration = (Configuration) config;
+
+        TaskSchedule taskSchedule = configuration.getTaskSchedule();
+
+        //Make sure taskSchedule is not defined in the config file
+        if (taskSchedule != null) {
+            getLogger().error("Please do not define taskSchedule in config file. Extension creates taskSchedule based on the CloudWatch monitor level.");
+            throw new IllegalArgumentException("Please do not define taskSchedule in config file. Extension creates taskSchedule based on the CloudWatch monitor level.");
+        }
+
+        String cloudWatchMonitoring = configuration.getCloudWatchMonitoring();
+        int taskDelaySeconds = -1;
+
+        if (Configuration.CloudWatchMonitoringLevel.BASIC.getLevel().equalsIgnoreCase(cloudWatchMonitoring)) {
+            taskDelaySeconds = 300; //Every 5 minutes
+        } else if (Configuration.CloudWatchMonitoringLevel.DETAILED.getLevel().equalsIgnoreCase(cloudWatchMonitoring)) {
+            taskDelaySeconds = 60; //Every minute
+        }
+
+        if (configuration.getCloudWatchMonitoringInterval() > 0) {
+            taskDelaySeconds = configuration.getCloudWatchMonitoringInterval() * 60;
+        }
+
+        Map<String, Map<String, Integer>> dynamicConfig = new HashMap<>();
+
+        Map<String, Integer> taskScheduleMap = new HashMap<>();
+        taskScheduleMap.put("numberOfThreads", 1);
+        taskScheduleMap.put("taskDelaySeconds", taskDelaySeconds);
+
+        dynamicConfig.put("taskSchedule", taskScheduleMap);
+
+        JobScheduleModule jobScheduleModule = new JobScheduleModule();
+
+        Field jobScheduleModuleField = null;
+        try {
+            jobScheduleModuleField = conf.getClass().getDeclaredField("jobScheduleModule");
+            jobScheduleModuleField.setAccessible(true);
+        } catch (NoSuchFieldException e) {
+            getLogger().error("Not able to get the jobScheduleModule using reflection");
+        }
+
+        if (jobScheduleModuleField != null) {
+            try {
+                jobScheduleModuleField.set(conf, jobScheduleModule);
+                jobScheduleModule.initScheduledJob(dynamicConfig, monitorName, monitorJob);
+            } catch (IllegalAccessException e) {
+                getLogger().error("Not able to set the jobScheduleModule using reflection");
+            }
+        }
+
     }
 
     @Override
@@ -36,12 +110,6 @@ public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
         getLogger().info("Starting AWS Cloudwatch Monitoring task");
 
         try {
-
-            //#TODO Should be done from onConfigReload(File file) method in ABaseMonitor.class (available from v2.0.4)
-            Map<String, ?> configYml = configuration.getConfigYml();
-            T config = parseConfig(configYml);
-            initialize(config);
-            
             List<Metric> statsForUpload = getStatsForUpload(config);
 
             serviceProvider.getMetricWriteHelper().transformAndPrintMetrics(statsForUpload);
@@ -55,14 +123,6 @@ public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
         Configuration thisConfig = (Configuration) config;
         RegionEndpointProvider regionEndpointProvider = RegionEndpointProvider.getInstance();
         regionEndpointProvider.initialise(thisConfig.getRegionEndPoints());
-    }
-
-    //#TODO Can be done from snakeyml
-    private T parseConfig(Map<String, ?> configYml) {
-        Gson gson = new Gson();
-        JsonElement jsonElement = gson.toJsonTree(configYml);
-        T config = gson.fromJson(jsonElement, this.clazz);
-        return config;
     }
 
     protected void initialize(T config) {

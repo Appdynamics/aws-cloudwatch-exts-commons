@@ -16,6 +16,8 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
+import com.appdynamics.extensions.MonitorExecutorService;
+import com.appdynamics.extensions.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
@@ -23,17 +25,16 @@ import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
 import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.LongAdder;
@@ -86,9 +87,10 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
      * <p>
      * Returns the accumulated metrics statistics for specified region
      */
-    public RegionMetricStatistics call() throws Exception {
+    public RegionMetricStatistics call() {
         RegionMetricStatistics regionMetricStats = null;
-        ExecutorService threadPool = null;
+
+        MonitorExecutorService executorService = null;
 
         try {
             RegionEndpointProvider regionEndpointProvider =
@@ -107,9 +109,12 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
             regionMetricStats.setRegion(region);
 
             if (metrics != null && !metrics.isEmpty()) {
-                threadPool = Executors.newFixedThreadPool(noOfMetricThreadsPerRegion);
-                CompletionService<MetricStatistic> tasks = createConcurrentMetricTasks(
-                        threadPool, metrics);
+
+                executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(noOfMetricThreadsPerRegion));
+
+
+                List<FutureTask<MetricStatistic>> tasks = createConcurrentMetricTasks(
+                        executorService, metrics);
                 collectMetrics(tasks, metrics.size(), regionMetricStats);
 
             } else {
@@ -124,19 +129,18 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                     metricsProcessor.getNamespace(), accountName, region), e);
 
         } finally {
-            if (threadPool != null && !threadPool.isShutdown()) {
-                threadPool.shutdown();
+            if (executorService != null && !executorService.isShutdown()) {
+                executorService.shutdown();
             }
         }
 
         return regionMetricStats;
     }
 
-    private CompletionService<MetricStatistic> createConcurrentMetricTasks(ExecutorService threadPool,
-                                                                           List<AWSMetric> metrics) {
+    private List<FutureTask<MetricStatistic>> createConcurrentMetricTasks(MonitorExecutorService executorService,
+                                                                          List<AWSMetric> metrics) {
 
-        CompletionService<MetricStatistic> metricTasks =
-                new ExecutorCompletionService<MetricStatistic>(threadPool);
+        List<FutureTask<MetricStatistic>> futureTasks = Lists.newArrayList();
 
         long startTime = DateTime.now().getSecondOfMinute();
         for (AWSMetric metric : metrics) {
@@ -156,22 +160,25 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                             .withPrefix(metricPrefix)
                             .build();
 
-            metricTasks.submit(metricTask);
+            FutureTask<MetricStatistic> accountTaskExecutor = new FutureTask<MetricStatistic>(metricTask);
+
+            executorService.submit("RegionMetricStatisticsCollector", accountTaskExecutor);
+            futureTasks.add(accountTaskExecutor);
         }
         long elapsedTimeSeconds = DateTime.now().getSecondOfMinute() - startTime;
 
         LOGGER.debug("Get metric statistics took " + elapsedTimeSeconds);
 
-        return metricTasks;
+        return futureTasks;
     }
 
-    private void collectMetrics(CompletionService<MetricStatistic> parallelTasks,
+    private void collectMetrics(List<FutureTask<MetricStatistic>> parallelTasks,
                                 int taskSize, RegionMetricStatistics regionMetricStatistics) {
 
-        for (int index = 0; index < taskSize; index++) {
+        for (FutureTask<MetricStatistic> task : parallelTasks) {
 
             try {
-                MetricStatistic metricStatistics = parallelTasks.take().get(DEFAULT_THREAD_TIMEOUT, TimeUnit.SECONDS);
+                MetricStatistic metricStatistics = task.get(DEFAULT_THREAD_TIMEOUT, TimeUnit.SECONDS);
                 regionMetricStatistics.addMetricStatistic(metricStatistics);
 
             } catch (InterruptedException e) {

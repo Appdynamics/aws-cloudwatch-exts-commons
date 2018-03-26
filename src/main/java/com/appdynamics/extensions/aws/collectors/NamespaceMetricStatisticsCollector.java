@@ -11,6 +11,8 @@ import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_THREAD_TIMEOUT;
 import static com.appdynamics.extensions.aws.validators.Validator.validateNamespace;
 
+import com.appdynamics.extensions.MonitorExecutorService;
+import com.appdynamics.extensions.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
@@ -32,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.LongAdder;
@@ -91,19 +94,19 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
                 validateNamespace(metricsProcessor.getNamespace());
 
                 threadPool = Executors.newScheduledThreadPool(getNoOfAccountThreads());
-                //threadPool = Executors.newFixedThreadPool(getNoOfAccountThreads());
-                List<FutureTask<AccountMetricStatistics>> tasks =
-                        createConcurrentAccountTasks(threadPool);
 
-                //FutureTask futureTask =
+                MonitorExecutorService executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(getNoOfAccountThreads()));
+
+
+                List<FutureTask<AccountMetricStatistics>> tasks =
+                        createConcurrentAccountTasks(executorService);
 
                 NamespaceMetricStatistics namespaceMetrics = new NamespaceMetricStatistics();
                 namespaceMetrics.setNamespace(metricsProcessor.getNamespace());
 
-                collectMetrics(tasks, accounts.size(), namespaceMetrics);
+                collectMetrics(tasks, namespaceMetrics);
                 List<Metric> metricStatsForUpload = metricsProcessor.createMetricStatsMapForUpload(namespaceMetrics);
-                //#TODO Name change to API calls
-                String total_requests = "Total Requests";
+                String total_requests = "AWS API Calls";
                 Metric metric = new Metric(total_requests, Double.toString(awsRequestsCounter.doubleValue()), metricPrefix + total_requests);
                 metricStatsForUpload.add(metric);
 
@@ -130,11 +133,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
     }
 
     private List<FutureTask<AccountMetricStatistics>> createConcurrentAccountTasks(
-            ScheduledExecutorService threadPool) {
-
-
-		/*CompletionService<AccountMetricStatistics> accountTasks =
-                new ExecutorCompletionService<AccountMetricStatistics>(threadPool);*/
+            MonitorExecutorService executorService) {
 
         List<FutureTask<AccountMetricStatistics>> futureTasks = Lists.newArrayList();
 
@@ -154,23 +153,19 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
                             .withPrefix(metricPrefix)
                             .build();
 
-            //accountTasks.submit(accountTask);
             FutureTask<AccountMetricStatistics> accountTaskExecutor = new FutureTask<AccountMetricStatistics>(accountTask);
-            threadPool.scheduleAtFixedRate(accountTaskExecutor, 0, metricsConfig.getMetricsCollectionInterval(), TimeUnit.MINUTES);
+            executorService.submit("NamespaceMetricStatisticsCollector", accountTaskExecutor);
             futureTasks.add(accountTaskExecutor);
         }
 
         return futureTasks;
     }
 
-    private void collectMetrics(List<FutureTask<AccountMetricStatistics>> parallelTasks,
-                                int taskSize, NamespaceMetricStatistics namespaceMetricStatistics) {
+    private void collectMetrics(List<FutureTask<AccountMetricStatistics>> parallelTasks, NamespaceMetricStatistics namespaceMetricStatistics) {
 
         for (FutureTask<AccountMetricStatistics> task : parallelTasks) {
             try {
                 AccountMetricStatistics accountStats = task.get(DEFAULT_THREAD_TIMEOUT, TimeUnit.SECONDS);
-                /*AccountMetricStatistics accountStats =
-                        parallelTasks.take().get(DEFAULT_THREAD_TIMEOUT, TimeUnit.SECONDS);*/
                 namespaceMetricStatistics.add(accountStats);
 
             } catch (InterruptedException e) {

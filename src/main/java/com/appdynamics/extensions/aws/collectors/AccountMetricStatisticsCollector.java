@@ -16,6 +16,8 @@ import static com.appdynamics.extensions.aws.validators.Validator.validateAccoun
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
+import com.appdynamics.extensions.MonitorExecutorService;
+import com.appdynamics.extensions.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
@@ -24,17 +26,17 @@ import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
+import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.LongAdder;
@@ -90,9 +92,10 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
      * <p>
      * Returns the accumulated metrics statistics for specified account
      */
-    public AccountMetricStatistics call() throws Exception {
+    public AccountMetricStatistics call() {
         AccountMetricStatistics accountStats = null;
-        ExecutorService threadPool = null;
+
+        MonitorExecutorService executorService = null;
 
         try {
             validateAccount(account);
@@ -111,10 +114,11 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
             ClientConfiguration awsClientConfig = createAWSClientConfiguration(maxErrorRetrySize, proxyConfig);
 
-            //TODO why create a new thread pool. Use the existing thread pool from the commons library
-            threadPool = Executors.newFixedThreadPool(noOfRegionThreadsPerAccount);
-            CompletionService<RegionMetricStatistics> tasks = createConcurrentRegionTasks(
-                    threadPool, account.getRegions(), awsCredentials, awsClientConfig);
+            executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(noOfRegionThreadsPerAccount));
+
+
+            List<FutureTask<RegionMetricStatistics>> tasks = createConcurrentRegionTasks(
+                    executorService, account.getRegions(), awsCredentials, awsClientConfig);
             collectMetrics(tasks, account.getRegions().size(), accountStats);
 
         } catch (Exception e) {
@@ -125,8 +129,8 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
                             account.getDisplayAccountName()), e);
 
         } finally {
-            if (threadPool != null && !threadPool.isShutdown()) {
-                threadPool.shutdown();
+            if (executorService != null && !executorService.isShutdown()) {
+                executorService.shutdown();
             }
         }
 
@@ -134,14 +138,13 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         return accountStats;
     }
 
-    private CompletionService<RegionMetricStatistics> createConcurrentRegionTasks(
-            ExecutorService threadPool,
+    private List<FutureTask<RegionMetricStatistics>> createConcurrentRegionTasks(
+            MonitorExecutorService executorService,
             Set<String> regions,
             AWSCredentials awsCredentials,
             ClientConfiguration awsClientConfig) {
 
-        CompletionService<RegionMetricStatistics> regionTasks =
-                new ExecutorCompletionService<RegionMetricStatistics>(threadPool);
+        List<FutureTask<RegionMetricStatistics>> futureTasks = Lists.newArrayList();
 
         for (String region : regions) {
             RegionMetricStatisticsCollector regionTask =
@@ -157,19 +160,21 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
                             .withPrefix(metricPrefix)
                             .build();
 
-            regionTasks.submit(regionTask);
+            FutureTask<RegionMetricStatistics> regionTaskExecutor = new FutureTask<RegionMetricStatistics>(regionTask);
+
+            executorService.submit("AccountMetricStatisticsCollector", regionTaskExecutor);
+            futureTasks.add(regionTaskExecutor);
         }
 
-        return regionTasks;
+        return futureTasks;
     }
 
-    private void collectMetrics(CompletionService<RegionMetricStatistics> parallelTasks,
+    private void collectMetrics(List<FutureTask<RegionMetricStatistics>> parallelTasks,
                                 int taskSize, AccountMetricStatistics accountMetricStatistics) {
 
-        for (int index = 0; index < taskSize; index++) {
+        for (FutureTask<RegionMetricStatistics> task : parallelTasks) {
             try {
-                RegionMetricStatistics regionStats =
-                        parallelTasks.take().get(DEFAULT_THREAD_TIMEOUT, TimeUnit.SECONDS);
+                RegionMetricStatistics regionStats = task.get(DEFAULT_THREAD_TIMEOUT, TimeUnit.SECONDS);
                 accountMetricStatistics.add(regionStats);
 
             } catch (InterruptedException e) {
