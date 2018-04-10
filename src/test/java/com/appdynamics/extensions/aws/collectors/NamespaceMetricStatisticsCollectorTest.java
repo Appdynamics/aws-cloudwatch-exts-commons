@@ -90,6 +90,7 @@ public class NamespaceMetricStatisticsCollectorTest {
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
         when(mockBuilder.withNoOfMetricThreadsPerRegion(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withNoOfRegionThreadsPerAccount(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withThreadTimeOut(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withCredentialsDecryptionConfig(any(CredentialsDecryptionConfig.class))).thenReturn(mockBuilder);
         when(mockBuilder.withProxyConfig(any(ProxyConfig.class))).thenReturn(mockBuilder);
         when(mockBuilder.withRateLimiter(any(RateLimiter.class))).thenReturn(mockBuilder);

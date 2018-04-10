@@ -9,7 +9,6 @@ package com.appdynamics.extensions.aws.collectors;
 
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_MAX_ERROR_RETRY;
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_THREAD_TIMEOUT;
 import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSClientConfiguration;
 import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSCredentials;
 import static com.appdynamics.extensions.aws.validators.Validator.validateAccount;
@@ -48,13 +47,15 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class AccountMetricStatisticsCollector implements Callable<AccountMetricStatistics> {
 
-    private static Logger LOGGER = Logger.getLogger("com.singularity.extensions.aws.AccountMetricStatisticsCollector");
+    private static Logger LOGGER = Logger.getLogger(AccountMetricStatisticsCollector.class);
 
     private Account account;
 
     private int noOfRegionThreadsPerAccount;
 
     private int noOfMetricThreadsPerRegion;
+
+    private int threadTimeOut;
 
     private MetricsTimeRange metricsTimeRange;
 
@@ -81,6 +82,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         this.rateLimiter = builder.rateLimiter;
         this.awsRequestsCounter = builder.awsRequestsCounter;
         this.metricPrefix = builder.metricPrefix;
+        this.threadTimeOut = builder.threadTimeOut;
 
         setNoOfRegionThreadsPerAccount(builder.noOfRegionThreadsPerAccount);
         setMaxErrorRetrySize(builder.maxErrorRetrySize);
@@ -154,6 +156,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
                             .withMetricsProcessor(metricsProcessor)
                             .withMetricsTimeRange(metricsTimeRange)
                             .withNoOfMetricThreadsPerRegion(noOfMetricThreadsPerRegion)
+                            .withThreadTimeOut(threadTimeOut)
                             .withRegion(region)
                             .withRateLimiter(rateLimiter)
                             .withAWSRequestCounter(awsRequestsCounter)
@@ -174,7 +177,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
         for (FutureTask<RegionMetricStatistics> task : parallelTasks) {
             try {
-                RegionMetricStatistics regionStats = task.get(DEFAULT_THREAD_TIMEOUT, TimeUnit.SECONDS);
+                RegionMetricStatistics regionStats = task.get(threadTimeOut, TimeUnit.SECONDS);
                 accountMetricStatistics.add(regionStats);
 
             } catch (InterruptedException e) {
@@ -207,6 +210,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         private Account account;
         private int noOfRegionThreadsPerAccount;
         private int noOfMetricThreadsPerRegion;
+        private int threadTimeOut;
         private MetricsTimeRange metricsTimeRange;
         private MetricsProcessor metricsProcessor;
         private int maxErrorRetrySize;
@@ -272,6 +276,11 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
         public Builder withPrefix(String metricPrefix) {
             this.metricPrefix = metricPrefix;
+            return this;
+        }
+
+        public Builder withThreadTimeOut(int threadTimeOut) {
+            this.threadTimeOut = threadTimeOut;
             return this;
         }
     }

@@ -8,7 +8,6 @@
 package com.appdynamics.extensions.aws.collectors;
 
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_THREAD_TIMEOUT;
 import static com.appdynamics.extensions.aws.validators.Validator.validateRegion;
 
 import com.amazonaws.ClientConfiguration;
@@ -46,7 +45,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class RegionMetricStatisticsCollector implements Callable<RegionMetricStatistics> {
 
-    private static Logger LOGGER = Logger.getLogger("com.singularity.extensions.aws.RegionMetricStatisticsCollector");
+    private static Logger LOGGER = Logger.getLogger(RegionMetricStatisticsCollector.class);
 
     private String accountName;
 
@@ -55,6 +54,8 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
     private MetricsProcessor metricsProcessor;
 
     private int noOfMetricThreadsPerRegion;
+
+    private int threadTimeOut;
 
     private MetricsTimeRange metricsTimeRange;
 
@@ -76,6 +77,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         this.rateLimiter = builder.rateLimiter;
         this.awsRequestsCounter = builder.awsRequestsCounter;
         this.metricPrefix = builder.metricPrefix;
+        this.threadTimeOut = builder.threadTimeOut;
 
         setNoOfMetricThreadsPerRegion(builder.noOfMetricThreadsPerRegion);
     }
@@ -178,7 +180,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         for (FutureTask<MetricStatistic> task : parallelTasks) {
 
             try {
-                MetricStatistic metricStatistics = task.get(DEFAULT_THREAD_TIMEOUT, TimeUnit.SECONDS);
+                MetricStatistic metricStatistics = task.get(threadTimeOut, TimeUnit.SECONDS);
                 regionMetricStatistics.addMetricStatistic(metricStatistics);
 
             } catch (InterruptedException e) {
@@ -209,6 +211,8 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         private MetricsProcessor metricsProcessor;
 
         private int noOfMetricThreadsPerRegion;
+
+        private int threadTimeOut;
 
         private MetricsTimeRange metricsTimeRange;
 
@@ -272,6 +276,11 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         public Builder withPrefix(String metricPrefix) {
             this.metricPrefix = metricPrefix;
+            return this;
+        }
+
+        public Builder withThreadTimeOut(int threadTimeOut) {
+            this.threadTimeOut = threadTimeOut;
             return this;
         }
     }

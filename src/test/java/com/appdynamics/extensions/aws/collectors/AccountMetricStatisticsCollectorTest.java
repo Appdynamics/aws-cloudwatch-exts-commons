@@ -95,6 +95,7 @@ public class AccountMetricStatisticsCollectorTest {
         when(mockBuilder.withMetricsProcessor(any(MetricsProcessor.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
         when(mockBuilder.withNoOfMetricThreadsPerRegion(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withThreadTimeOut(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withRegion(anyString())).thenReturn(mockBuilder);
         when(mockBuilder.withRateLimiter(any(RateLimiter.class))).thenReturn(mockBuilder);
         when(mockBuilder.withAWSRequestCounter(any(LongAdder.class))).thenReturn(mockBuilder);

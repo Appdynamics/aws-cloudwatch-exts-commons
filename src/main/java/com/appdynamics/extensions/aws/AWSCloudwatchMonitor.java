@@ -12,7 +12,8 @@ import com.appdynamics.extensions.TasksExecutionServiceProvider;
 import com.appdynamics.extensions.aws.config.Configuration;
 import com.appdynamics.extensions.aws.config.TaskSchedule;
 import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;
-import com.appdynamics.extensions.conf.MonitorConfiguration;
+import com.appdynamics.extensions.conf.MonitorContext;
+import com.appdynamics.extensions.conf.MonitorContextConfiguration;
 import com.appdynamics.extensions.conf.modules.JobScheduleModule;
 import com.appdynamics.extensions.metrics.Metric;
 import org.apache.log4j.Logger;
@@ -21,7 +22,6 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,10 +49,11 @@ public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
         }
 
         initialize(config);
+        initializeJobScheduler();
     }
 
-    @Override
-    protected void initializeMoreStuff(Map<String, String> args, MonitorConfiguration conf) {
+    private void initializeJobScheduler() {
+
         Configuration configuration = (Configuration) config;
 
         TaskSchedule taskSchedule = configuration.getTaskSchedule();
@@ -84,25 +85,13 @@ public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
 
         dynamicConfig.put("taskSchedule", taskScheduleMap);
 
+
         JobScheduleModule jobScheduleModule = new JobScheduleModule();
+        jobScheduleModule.initScheduledJob(dynamicConfig, monitorName, monitorJob);
 
-        Field jobScheduleModuleField = null;
-        try {
-            jobScheduleModuleField = conf.getClass().getDeclaredField("jobScheduleModule");
-            jobScheduleModuleField.setAccessible(true);
-        } catch (NoSuchFieldException e) {
-            getLogger().error("Not able to get the jobScheduleModule using reflection");
-        }
-
-        if (jobScheduleModuleField != null) {
-            try {
-                jobScheduleModuleField.set(conf, jobScheduleModule);
-                jobScheduleModule.initScheduledJob(dynamicConfig, monitorName, monitorJob);
-            } catch (IllegalAccessException e) {
-                getLogger().error("Not able to set the jobScheduleModule using reflection");
-            }
-        }
-
+        MonitorContextConfiguration contextConfiguration = getContextConfiguration();
+        MonitorContext context = contextConfiguration.getContext();
+        context.setJobScheduleModule(jobScheduleModule);
     }
 
     @Override

@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RegionEndpointProvider {
 
-    private static Logger LOGGER = Logger.getLogger("com.singularity.extensions.aws.RegionEndpointProvider");
+    private static Logger LOGGER = Logger.getLogger(RegionEndpointProvider.class);
 
     private final Map<String, String> regionEndpoints = new ConcurrentHashMap<String, String>();
 

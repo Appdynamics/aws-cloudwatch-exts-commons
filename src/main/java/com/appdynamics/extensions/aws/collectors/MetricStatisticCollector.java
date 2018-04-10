@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
-    private static Logger LOGGER = Logger.getLogger("com.singularity.extensions.aws.MetricStatisticCollector");
+    private static Logger LOGGER = Logger.getLogger(MetricStatisticCollector.class);
 
     private String accountName;
 

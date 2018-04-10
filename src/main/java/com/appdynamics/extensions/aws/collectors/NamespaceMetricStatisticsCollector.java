@@ -8,7 +8,6 @@
 package com.appdynamics.extensions.aws.collectors;
 
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_THREAD_TIMEOUT;
 import static com.appdynamics.extensions.aws.validators.Validator.validateNamespace;
 
 import com.appdynamics.extensions.MonitorExecutorService;
@@ -46,7 +45,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>> {
 
-    private static Logger LOGGER = Logger.getLogger("com.singularity.extensions.aws.NamespaceMetricStatisticsCollector");
+    private static Logger LOGGER = Logger.getLogger(NamespaceMetricStatisticsCollector.class);
 
     private List<Account> accounts;
 
@@ -146,6 +145,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
                             .withMetricsTimeRange(metricsConfig.getMetricsTimeRange())
                             .withNoOfMetricThreadsPerRegion(concurrencyConfig.getNoOfMetricThreadsPerRegion())
                             .withNoOfRegionThreadsPerAccount(concurrencyConfig.getNoOfRegionThreadsPerAccount())
+                            .withThreadTimeOut(concurrencyConfig.getThreadTimeOut())
                             .withCredentialsDecryptionConfig(credentialsDecryptionConfig)
                             .withProxyConfig(proxyConfig)
                             .withRateLimiter(RateLimiter.create(metricsConfig.getGetMetricStatisticsRateLimit()))
@@ -165,7 +165,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
 
         for (FutureTask<AccountMetricStatistics> task : parallelTasks) {
             try {
-                AccountMetricStatistics accountStats = task.get(DEFAULT_THREAD_TIMEOUT, TimeUnit.SECONDS);
+                AccountMetricStatistics accountStats = task.get(concurrencyConfig.getThreadTimeOut(), TimeUnit.SECONDS);
                 namespaceMetricStatistics.add(accountStats);
 
             } catch (InterruptedException e) {

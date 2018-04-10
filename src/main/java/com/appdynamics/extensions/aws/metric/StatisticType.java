@@ -22,7 +22,7 @@ public enum StatisticType {
 	SUM("Sum"),
 	SAMPLE_COUNT("SampleCount");
 	
-	private static Logger LOGGER = Logger.getLogger("com.singularity.extensions.aws.StatisticType");
+	private static Logger LOGGER = Logger.getLogger(StatisticType.class);
 	
 	private String typeName;
 	
