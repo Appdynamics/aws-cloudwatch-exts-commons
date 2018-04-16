@@ -33,7 +33,7 @@ public class AWSUtil {
 
 		return value;
 	}
-
+	//#TODO Use CryptoUtils to make it consistent
 	public static AWSCredentials createAWSCredentials(Account account,
 													  CredentialsDecryptionConfig credentialsDecryptionConfig) {
 		String awsAccessKey = account.getAwsAccessKey();

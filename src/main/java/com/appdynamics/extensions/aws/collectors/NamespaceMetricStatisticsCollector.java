@@ -106,6 +106,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
                 collectMetrics(tasks, namespaceMetrics);
                 List<Metric> metricStatsForUpload = metricsProcessor.createMetricStatsMapForUpload(namespaceMetrics);
                 String total_requests = "AWS API Calls";
+                //#TODO qualifiers have to be SUM, SUM, ...etc
                 Metric metric = new Metric(total_requests, Double.toString(awsRequestsCounter.doubleValue()), metricPrefix + total_requests);
                 metricStatsForUpload.add(metric);
 
