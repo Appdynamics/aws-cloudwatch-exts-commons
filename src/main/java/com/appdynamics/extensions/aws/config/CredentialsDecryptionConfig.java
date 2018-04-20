@@ -12,37 +12,36 @@ import org.apache.commons.lang.builder.ToStringStyle;
 
 /**
  * @author Florencio Sarmiento
- *
  */
 public class CredentialsDecryptionConfig {
 
-	private String enableDecryption;
+    private String enableDecryption;
 
-	private String decryptionKey;
+    private String encryptionKey;
 
-	public boolean isDecryptionEnabled() {
-		return Boolean.valueOf(getEnableDecryption());
-	}
-	
-	public String getEnableDecryption() {
-		return enableDecryption;
-	}
+    public boolean isDecryptionEnabled() {
+        return Boolean.valueOf(getEnableDecryption());
+    }
 
-	public void setEnableDecryption(String enableDecryption) {
-		this.enableDecryption = enableDecryption;
-	}
+    public String getEnableDecryption() {
+        return enableDecryption;
+    }
 
-	public String getDecryptionKey() {
-		return decryptionKey;
-	}
+    public void setEnableDecryption(String enableDecryption) {
+        this.enableDecryption = enableDecryption;
+    }
 
-	public void setDecryptionKey(String decryptionKey) {
-		this.decryptionKey = decryptionKey;
-	}
-	
-	@Override
-	public String toString() {
-		return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
-	}
+    public String getEncryptionKey() {
+        return encryptionKey;
+    }
+
+    public void setEncryptionKey(String encryptionKey) {
+        this.encryptionKey = encryptionKey;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+    }
 
 }

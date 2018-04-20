@@ -76,8 +76,21 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         this.awsRequestsCounter = builder.awsRequestsCounter;
         this.metricPrefix = builder.metricPrefix;
 
-        setStartTimeInMinsBeforeNow(builder.metricsTimeRange.getStartTimeInMinsBeforeNow());
-        setEndTimeInMinsBeforeNow(builder.metricsTimeRange.getEndTimeInMinsBeforeNow());
+        //Check if time ranges are specified locally for a metric. If not use the global time ranges.
+        MetricsTimeRange metricsTimeRangeLocal = metric.getIncludeMetric().getMetricsTimeRange();
+
+        int startTimeInMinsBeforeNow = builder.metricsTimeRange.getStartTimeInMinsBeforeNow();
+        if (metricsTimeRangeLocal != null) {
+            startTimeInMinsBeforeNow = metricsTimeRangeLocal.getStartTimeInMinsBeforeNow();
+        }
+
+        int endTimeInMinsBeforeNow = builder.metricsTimeRange.getEndTimeInMinsBeforeNow();
+        if (metricsTimeRangeLocal != null) {
+            endTimeInMinsBeforeNow = metricsTimeRangeLocal.getEndTimeInMinsBeforeNow();
+        }
+
+        setStartTimeInMinsBeforeNow(startTimeInMinsBeforeNow);
+        setEndTimeInMinsBeforeNow(endTimeInMinsBeforeNow);
     }
 
     /**

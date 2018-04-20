@@ -3,7 +3,7 @@ accounts:
     awsSecretKey:
     displayAccountName: "AppD"
 
-    # Regions where ec2 is registered
+    # Regions where namespace is registered
     # Allowed values: ap-southeast-1, ap-southeast-2, ap-northeast-1, eu-central-1,
     #                 us-east-1, eu-west-1, us-west-1, us-west-2, sa-east-1
     #
@@ -11,7 +11,7 @@ accounts:
     
 credentialsDecryptionConfig:
     enableDecryption: "false"
-    decryptionKey:
+    encryptionKey:
     
 proxyConfig:
     host:
@@ -32,42 +32,6 @@ ec2Instance: ""
 tags:
   - name: "Name"
     #value: ["tag1", "tag2", "tag3"]
-
-# Global metrics config for all accounts
-metricsConfig:
-
-    # By default, all metrics retrieved from cloudwatch are 'Average' values.	
-    # This option allows you to override the metric type. 
-    #
-    # Allowed statTypes are: ave, max, min, sum, samplecount
-    #
-    # Note: Irrespective of the metric type, value will still be reported as
-    # Observed value to the Controller
-    includeMetrics:
-       - name: "CPUUtilization"
-         alias: "CPUUtilization"
-         statType: "ave"
-         aggregationType: "OBSERVATION"
-         timeRollUpType: "CURRENT"
-         clusterRollUpType: "COLLECTIVE"
-         delta: false
-         multiplier: 1
-       - name: "NetworkOut"
-       - name: "NetworkIn"
-
-    metricsTimeRange:
-      startTimeInMinsBeforeNow: 10
-      endTimeInMinsBeforeNow: 0
-
-    # Rate limit ( per second ) for GetMetricStatistics, default value is 400. https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_limits.html
-    getMetricStatisticsRateLimit: 400
-
-    # 
-    # The max number of retry attempts for failed retryable requests 
-    # (ex: 5xx error responses from a service) or throttling errors
-    #
-    maxErrorRetrySize: 0
-
 
 #Allowed values are Basic and Detailed. Refer https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-cloudwatch-new.html for more information
 # Basic will fire CloudWatch API calls every 5 minutes
@@ -92,6 +56,41 @@ regionEndPoints:
   us-west-1: monitoring.us-west-1.amazonaws.com
   us-west-2: monitoring.us-west-2.amazonaws.com
   sa-east-1: monitoring.sa-east-1.amazonaws.com
+
+# Global metrics config for all accounts
+metricsConfig:
+
+    # By default, all metrics retrieved from cloudwatch are 'Average' values.
+    # This option allows you to override the metric type.
+    #
+    # Allowed statTypes are: ave, max, min, sum, samplecount
+    #
+    # Note: Irrespective of the metric type, value will still be reported as
+    # Observed value to the Controller
+    includeMetrics:
+       - name: "CPUUtilization"
+         alias: "CPUUtilization"
+         statType: "ave"
+         aggregationType: "OBSERVATION"
+         timeRollUpType: "CURRENT"
+         clusterRollUpType: "COLLECTIVE"
+         delta: false
+         multiplier: 1
+       - name: "NetworkOut"
+       - name: "NetworkIn"
+
+    metricsTimeRange:
+      startTimeInMinsBeforeNow: 10
+      endTimeInMinsBeforeNow: 0
+
+    # Rate limit ( per second ) for GetMetricStatistics, default value is 400. https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_limits.html
+    getMetricStatisticsRateLimit: 400
+
+    #
+    # The max number of retry attempts for failed retryable requests
+    # (ex: 5xx error responses from a service) or throttling errors
+    #
+    maxErrorRetrySize: 0
 
 #prefix used to show up metrics in AppDynamics. This will create this metric in all the tiers, under this path
 #metricPrefix: "Custom Metrics|Amazon EC2|"

@@ -102,7 +102,7 @@ public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
             List<Metric> statsForUpload = getStatsForUpload(config);
 
             serviceProvider.getMetricWriteHelper().transformAndPrintMetrics(statsForUpload);
-            //#TODO call MetricWriteHelper.onComplete();
+            serviceProvider.getMetricWriteHelper().onComplete();
 
         } catch (Exception ex) {
             getLogger().error("Unfortunately an issue has occurred: ", ex);

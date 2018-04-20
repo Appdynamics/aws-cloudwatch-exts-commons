@@ -29,6 +29,8 @@ public class IncludeMetric {
 
     private boolean delta;
 
+    private MetricsTimeRange metricsTimeRange;
+
     public String getName() {
         return name;
     }
@@ -91,5 +93,13 @@ public class IncludeMetric {
 
     public void setDelta(boolean delta) {
         this.delta = delta;
+    }
+
+    public MetricsTimeRange getMetricsTimeRange() {
+        return metricsTimeRange;
+    }
+
+    public void setMetricsTimeRange(MetricsTimeRange metricsTimeRange) {
+        this.metricsTimeRange = metricsTimeRange;
     }
 }

@@ -24,6 +24,7 @@ import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
 import com.appdynamics.extensions.metrics.Metric;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
+import com.singularity.ee.agent.systemagent.api.MetricWriter;
 import org.apache.log4j.Logger;
 
 import java.util.List;
@@ -106,8 +107,8 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
                 collectMetrics(tasks, namespaceMetrics);
                 List<Metric> metricStatsForUpload = metricsProcessor.createMetricStatsMapForUpload(namespaceMetrics);
                 String total_requests = "AWS API Calls";
-                //#TODO qualifiers have to be SUM, SUM, ...etc
-                Metric metric = new Metric(total_requests, Double.toString(awsRequestsCounter.doubleValue()), metricPrefix + total_requests);
+                Metric metric = new Metric(total_requests, Double.toString(awsRequestsCounter.doubleValue()), metricPrefix + total_requests,
+                        MetricWriter.METRIC_AGGREGATION_TYPE_SUM, MetricWriter.METRIC_TIME_ROLLUP_TYPE_SUM, MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE);
                 metricStatsForUpload.add(metric);
 
                 return metricStatsForUpload;
@@ -209,7 +210,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
             this.metricPrefix = metricPrefix;
         }
 
-        public Builder withCredentialsEncryptionConfig(CredentialsDecryptionConfig credentialsDecryptionConfig) {
+        public Builder withCredentialsDecryptionConfig(CredentialsDecryptionConfig credentialsDecryptionConfig) {
             this.credentialsDecryptionConfig = credentialsDecryptionConfig;
             return this;
         }
