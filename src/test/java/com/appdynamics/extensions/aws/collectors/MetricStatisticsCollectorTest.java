@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
@@ -57,6 +58,9 @@ public class MetricStatisticsCollectorTest {
 
     @Mock
     private GetMetricStatisticsResult mockGetMetricStatsResult;
+
+    @Mock
+    private MetricsTimeRange mockMetricsTimeRange;
 
     private LongAdder requestCounter = new LongAdder();
 
@@ -150,6 +154,44 @@ public class MetricStatisticsCollectorTest {
 
         assertNull(result.getValue());
         assertNull(result.getUnit());
+    }
+
+    @Test
+    public void testIndividualMetricTimeRanges() throws NoSuchFieldException, IllegalAccessException {
+        MetricsTimeRange timeRange = new MetricsTimeRange();
+        timeRange.setEndTimeInMinsBeforeNow(0);
+        timeRange.setStartTimeInMinsBeforeNow(5);
+
+        int startTime = 15;
+        int endTime = 10;
+        when(mockAWSMetric.getIncludeMetric()).thenReturn(mockIncludeMetric);
+        when(mockIncludeMetric.getMetricsTimeRange()).thenReturn(mockMetricsTimeRange);
+        when(mockMetricsTimeRange.getStartTimeInMinsBeforeNow()).thenReturn(startTime);
+        when(mockMetricsTimeRange.getEndTimeInMinsBeforeNow()).thenReturn(endTime);
+
+
+        classUnderTest = new MetricStatisticCollector.Builder()
+                .withMetricsTimeRange(timeRange)
+                .withMetric(mockAWSMetric)
+                .withAWSRequestCounter(requestCounter)
+                .build();
+
+
+        Field startTimeInMinsBeforeNow = getField(classUnderTest.getClass(), "startTimeInMinsBeforeNow");
+        int startTimeInMinsBeforeNowValue = (Integer) startTimeInMinsBeforeNow.get(classUnderTest);
+        assertEquals(startTime, startTimeInMinsBeforeNowValue);
+
+
+        Field endTimeInMinsBeforeNow = getField(classUnderTest.getClass(), "endTimeInMinsBeforeNow");
+        int endTimeInMinsBeforeNowValue = (Integer) endTimeInMinsBeforeNow.get(classUnderTest);
+        assertEquals(endTime, endTimeInMinsBeforeNowValue);
+    }
+
+    private Field getField(Class<?> thisClass, String name) throws NoSuchFieldException {
+        Field field = thisClass.getDeclaredField(name);
+        field.setAccessible(true);
+
+        return field;
     }
 
     private Datapoint createTestDatapoint(Date timestamp) {
