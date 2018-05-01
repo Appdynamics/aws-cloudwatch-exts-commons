@@ -1,3 +1,10 @@
+/*
+ * Copyright 2018. AppDynamics LLC and its affiliates.
+ * All Rights Reserved.
+ * This is unpublished proprietary source code of AppDynamics LLC and its affiliates.
+ * The copyright notice above does not evidence any actual or intended publication of such source code.
+ */
+
 package com.appdynamics.extensions.aws.metric.processors;
 
 import static com.appdynamics.extensions.aws.Constants.METRIC_PATH_SEPARATOR;
@@ -8,7 +15,8 @@ import com.amazonaws.services.cloudwatch.model.DimensionFilter;
 import com.amazonaws.services.cloudwatch.model.ListMetricsRequest;
 import com.amazonaws.services.cloudwatch.model.ListMetricsResult;
 import com.amazonaws.services.cloudwatch.model.Metric;
-import com.appdynamics.extensions.aws.config.MetricType;
+import com.appdynamics.extensions.aws.config.IncludeMetric;
+import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
@@ -18,12 +26,14 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -35,30 +45,33 @@ import java.util.regex.Pattern;
  */
 public class MetricsProcessorHelper {
 
-    public static List<Metric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
-                                                  String namespace, Pattern excludeMetrics, String... dimensionNames) {
-        List<Metric> metrics = getMetrics(awsCloudWatch, namespace, dimensionNames);
-        return filterMetrics(metrics, excludeMetrics);
+    private static Logger LOGGER = Logger.getLogger(MetricsProcessorHelper.class);
+
+
+    public static List<AWSMetric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
+                                                     LongAdder awsRequestsCounter, String namespace, List<IncludeMetric> includeMetrics, String... dimensionNames) {
+        List<Metric> metrics = getMetrics(awsCloudWatch, awsRequestsCounter, namespace, dimensionNames);
+        return filterMetrics(metrics, includeMetrics);
     }
 
-    public static List<Metric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
-                                                  String namespace, Pattern excludeMetrics, List<DimensionFilter> dimensions) {
-        List<Metric> metrics = getMetrics(awsCloudWatch, namespace, dimensions);
-        return filterMetrics(metrics, excludeMetrics);
+    public static List<AWSMetric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
+                                                     LongAdder awsRequestsCounter, String namespace, List<IncludeMetric> includeMetrics, List<DimensionFilter> dimensions) {
+        List<Metric> metrics = getMetrics(awsCloudWatch, awsRequestsCounter, namespace, dimensions);
+        return filterMetrics(metrics, includeMetrics);
     }
 
-    public static List<Metric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
-                                                  String namespace, Pattern excludeMetrics, List<DimensionFilter> dimensions, Predicate<Metric> metricFilter) {
-        List<Metric> metrics = getMetrics(awsCloudWatch, namespace, dimensions);
+    public static List<AWSMetric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
+                                                     LongAdder awsRequestsCounter, String namespace, List<IncludeMetric> includeMetrics, List<DimensionFilter> dimensions, Predicate<Metric> metricFilter) {
+        List<Metric> metrics = getMetrics(awsCloudWatch, awsRequestsCounter, namespace, dimensions);
 
         metrics = Lists.newArrayList(Collections2.filter(metrics, metricFilter));
 
-        return filterMetrics(metrics, excludeMetrics);
+        return filterMetrics(metrics, includeMetrics);
     }
 
 
     public static List<Metric> getMetrics(AmazonCloudWatch awsCloudWatch,
-                                          String namespace, String... dimensionNames) {
+                                          LongAdder awsRequestsCounter, String namespace, String... dimensionNames) {
         List<DimensionFilter> dimensions = new ArrayList<DimensionFilter>();
 
         for (String dimensionName : dimensionNames) {
@@ -67,36 +80,38 @@ public class MetricsProcessorHelper {
             dimensions.add(dimension);
         }
 
-        return getMetrics(awsCloudWatch, namespace, dimensions);
+        return getMetrics(awsCloudWatch, awsRequestsCounter, namespace, dimensions);
     }
 
     public static List<Metric> getMetrics(AmazonCloudWatch awsCloudWatch,
-                                          String namespace, List<DimensionFilter> dimensions) {
+                                          LongAdder awsRequestsCounter, String namespace, List<DimensionFilter> dimensions) {
         ListMetricsRequest request = new ListMetricsRequest();
 
         request.withNamespace(namespace);
         request.withDimensions(dimensions);
         ListMetricsResult listMetricsResult = awsCloudWatch.listMetrics(request);
+        awsRequestsCounter.increment();
         List<Metric> metrics = listMetricsResult.getMetrics();
 
         // Retrieves all the metrics if metricList > 500
         while (listMetricsResult.getNextToken() != null) {
             request.setNextToken(listMetricsResult.getNextToken());
             listMetricsResult = awsCloudWatch.listMetrics(request);
+            awsRequestsCounter.increment();
             metrics.addAll(listMetricsResult.getMetrics());
         }
 
         return metrics;
     }
 
-    public static StatisticType getStatisticType(Metric metric, List<MetricType> metricTypes) {
-        if (metricTypes != null && !metricTypes.isEmpty() && metric != null) {
-            for (MetricType metricType : metricTypes) {
-                Pattern pattern = Pattern.compile(metricType.getMetricName(),
+    public static StatisticType getStatisticType(IncludeMetric metric, List<IncludeMetric> metrics) {
+        if (metrics != null && !metrics.isEmpty() && metric != null) {
+            for (IncludeMetric includeMetric : metrics) {
+                Pattern pattern = Pattern.compile(includeMetric.getName(),
                         Pattern.CASE_INSENSITIVE);
 
-                if (isMatch(metric.getMetricName(), pattern)) {
-                    return StatisticType.fromString(metricType.getStatType());
+                if (isMatch(metric.getName(), pattern)) {
+                    return StatisticType.fromString(includeMetric.getStatType());
                 }
             }
         }
@@ -104,20 +119,24 @@ public class MetricsProcessorHelper {
         return StatisticType.AVE;
     }
 
-    public static List<Metric> filterMetrics(List<Metric> metrics, Pattern excludeMetrics) {
-        if (metrics != null && !metrics.isEmpty() && excludeMetrics != null) {
-            List<Metric> filteredMetrics = new ArrayList<Metric>();
+    public static List<AWSMetric> filterMetrics(List<Metric> metrics, List<IncludeMetric> includeMetrics) {
+
+        List<AWSMetric> awsMetrics = new ArrayList<>();
+        if (metrics != null && !metrics.isEmpty() && includeMetrics != null) {
 
             for (Metric metric : metrics) {
-                if (!isMatch(metric.getMetricName(), excludeMetrics)) {
-                    filteredMetrics.add(metric);
+                for (IncludeMetric includeMetric : includeMetrics) {
+                    if (includeMetric.getName().equals(metric.getMetricName())) {
+                        AWSMetric awsMetric = new AWSMetric();
+                        awsMetric.setIncludeMetric(includeMetric);
+                        awsMetric.setMetric(metric);
+                        awsMetrics.add(awsMetric);
+                        continue;
+                    }
                 }
             }
-
-            return filteredMetrics;
         }
-
-        return metrics;
+        return awsMetrics;
     }
 
     public static Pattern createPattern(Set<String> rawPatterns) {
@@ -155,10 +174,10 @@ public class MetricsProcessorHelper {
         return false;
     }
 
-    public static Map<String, Double> createMetricStatsMapForUpload(NamespaceMetricStatistics namespaceMetricStats,
-                                                                    Map<String, String> dimesionNameForMetricPathDictionary,
-                                                                    boolean useNamespaceAsPrefix) {
-        Map<String, Double> statsMap = new HashMap<String, Double>();
+    public static List<com.appdynamics.extensions.metrics.Metric> createMetricStatsMapForUpload(NamespaceMetricStatistics namespaceMetricStats,
+                                                                                                Map<String, String> dimesionNameForMetricPathDictionary,
+                                                                                                boolean useNamespaceAsPrefix) {
+        List<com.appdynamics.extensions.metrics.Metric> stats = new ArrayList<>();
 
         if (namespaceMetricStats != null) {
             String namespacePrefix = null;
@@ -173,69 +192,89 @@ public class MetricsProcessorHelper {
             processAccountMetricStatisticsList(namespacePrefix,
                     namespaceMetricStats.getAccountMetricStatisticsList(),
                     dimesionNameForMetricPathDictionary,
-                    statsMap);
+                    stats);
         }
 
-        return statsMap;
+        return stats;
     }
 
     private static void processAccountMetricStatisticsList(String namespacePrefix,
                                                            List<AccountMetricStatistics> accountStatsList,
                                                            Map<String, String> dimesionNameForMetricPathDictionary,
-                                                           Map<String, Double> statsMap) {
+                                                           List<com.appdynamics.extensions.metrics.Metric> stats) {
         for (AccountMetricStatistics accountStats : accountStatsList) {
             // e.g. MyTestAccount|
             String accountPrefix = buildMetricName(namespacePrefix, accountStats.getAccountName(), true);
             processRegionMetricStatisticsList(accountPrefix, accountStats.getRegionMetricStatisticsList(),
-                    dimesionNameForMetricPathDictionary, statsMap);
+                    dimesionNameForMetricPathDictionary, stats);
         }
     }
 
     private static void processRegionMetricStatisticsList(String accountPrefix,
                                                           List<RegionMetricStatistics> regionStatsList,
                                                           Map<String, String> dimesionNameForMetricPathDictionary,
-                                                          Map<String, Double> statsMap) {
+                                                          List<com.appdynamics.extensions.metrics.Metric> stats) {
         for (RegionMetricStatistics regionStats : regionStatsList) {
             // e.g. MyTestAccount|us-east-1|
             String regionPrefix = buildMetricName(accountPrefix, regionStats.getRegion(), true);
             processMetricStatisticsList(regionPrefix, regionStats.getMetricStatisticsList(),
-                    dimesionNameForMetricPathDictionary, statsMap);
+                    dimesionNameForMetricPathDictionary, stats);
         }
     }
 
     private static void processMetricStatisticsList(String regionPrefix,
                                                     List<MetricStatistic> metricStatsList,
-                                                    Map<String, String> dimesionNameForMetricPathDictionary,
-                                                    Map<String, Double> statsMap) {
+                                                    Map<String, String> dimensionNameForMetricPathDictionary,
+                                                    List<com.appdynamics.extensions.metrics.Metric> stats) {
 
         for (MetricStatistic metricStats : metricStatsList) {
             String partialMetricPath = regionPrefix;
 
-            for (Dimension dimension : metricStats.getMetric().getDimensions()) {
-                String dimesionNameForMetricPath = getDimesionNameForMetricPath(dimension.getName(),
-                        dimesionNameForMetricPathDictionary);
+            for (Dimension dimension : metricStats.getMetric().getMetric().getDimensions()) {
+                String dimensionNameForMetricPath = getDimesionNameForMetricPath(dimension.getName(),
+                        dimensionNameForMetricPathDictionary);
 
                 // e.g. MyTestAccount|us-east-1|Cache Cluster|
-                partialMetricPath = buildMetricName(partialMetricPath, dimesionNameForMetricPath, true);
+                partialMetricPath = buildMetricName(partialMetricPath, dimensionNameForMetricPath, true);
 
                 // e.g. MyTestAccount|us-east-1|Cache Cluster|mycachecluster
                 partialMetricPath = buildMetricName(partialMetricPath, dimension.getValue(), true);
             }
 
-            String awsMetricName = metricStats.getMetric().getMetricName();
+            String awsMetricName = metricStats.getMetric().getIncludeMetric().getName();
+            String metricPathWithoutPrefix = buildMetricName(partialMetricPath, awsMetricName, false);
+            String fullMetricPath = buildMetricName(metricStats.getMetricPrefix(), metricPathWithoutPrefix, false);
 
-			/*
-             *  Commented out for now as unit isn't available when there's no datapoint,
-			 *  so could result in duplicate metric registration when eventually it becomes available, 
-			 *  i.e. with and without unit
-			 */
-            //if (StringUtils.isNotBlank(metricStats.getUnit())) {
-            //	awsMetricName = String.format("%s (%s)", awsMetricName, metricStats.getUnit());
-            //}
 
-            // e.g. MyTestAccount|us-east-1|Cache Cluster|mycachecluster|Cache Node|0001|CPUUtilization
-            String fullMetricPath = buildMetricName(partialMetricPath, awsMetricName, false);
-            statsMap.put(fullMetricPath, metricStats.getValue());
+            if (metricStats.getValue() != null) {
+
+                /*
+                 *  Commented out for now as unit isn't available when there's no datapoint,
+                 *  so could result in duplicate metric registration when eventually it becomes available,
+                 *  i.e. with and without unit
+                 */
+                //if (StringUtils.isNotBlank(metricStats.getUnit())) {
+                //	awsMetricName = String.format("%s (%s)", awsMetricName, metricStats.getUnit());
+                //}
+
+                // e.g. MyTestAccount|us-east-1|Cache Cluster|mycachecluster|Cache Node|0001|CPUUtilization
+                //String fullMetricPath = buildMetricName(partialMetricPath, awsMetricName, false);
+
+                Map<String, Object> metricProperties = new HashMap<>();
+                IncludeMetric metricWithConfig = metricStats.getMetric().getIncludeMetric();
+                metricProperties.put("alias", metricWithConfig.getAlias());
+                metricProperties.put("multiplier", metricWithConfig.getMultiplier());
+                metricProperties.put("aggregationType", metricWithConfig.getAggregationType());
+                metricProperties.put("timeRollUpType", metricWithConfig.getTimeRollUpType());
+                metricProperties.put("clusterRollUpType", metricWithConfig.getClusterRollUpType());
+                metricProperties.put("delta", metricWithConfig.isDelta());
+
+                com.appdynamics.extensions.metrics.Metric metric = new com.appdynamics.extensions.metrics.Metric(awsMetricName, Double.toString(metricStats.getValue()),
+                        fullMetricPath, metricProperties);
+                stats.add(metric);
+            } else {
+                LOGGER.debug(String.format("Ignoring metric [ %s ] which has value null", fullMetricPath));
+            }
         }
     }
 

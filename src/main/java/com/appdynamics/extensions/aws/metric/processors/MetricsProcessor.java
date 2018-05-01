@@ -1,12 +1,21 @@
+/*
+ * Copyright 2018. AppDynamics LLC and its affiliates.
+ * All Rights Reserved.
+ * This is unpublished proprietary source code of AppDynamics LLC and its affiliates.
+ * The copyright notice above does not evidence any actual or intended publication of such source code.
+ */
+
 package com.appdynamics.extensions.aws.metric.processors;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.model.Metric;
+import com.appdynamics.extensions.aws.config.IncludeMetric;
+import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
 import com.appdynamics.extensions.aws.metric.StatisticType;
+import com.appdynamics.extensions.metrics.Metric;
 
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Interface to be implemented by Namespace specific MetricsProcessor
@@ -20,10 +29,11 @@ public interface MetricsProcessor {
      * will be used for retrieving statistics, therefore
      * any necessary filtering must be done within this method
      *
-     * @param awsCloudWatch AmazonCloudWatch
+     * @param awsCloudWatch      AmazonCloudWatch
+     * @param awsRequestsCounter a requests counter which counts the number of requests
      * @return list of metrics
      */
-    List<Metric> getMetrics(AmazonCloudWatch awsCloudWatch, String accountName);
+    List<AWSMetric> getMetrics(AmazonCloudWatch awsCloudWatch, String accountName, LongAdder awsRequestsCounter);
 
     /**
      * Returns the statistic type of the specified metric
@@ -31,7 +41,7 @@ public interface MetricsProcessor {
      * @param metric - Metric
      * @return statisticType
      */
-    StatisticType getStatisticType(Metric metric);
+    StatisticType getStatisticType(AWSMetric metric);
 
     /**
      * Converts the nested statistics within NamespaceMetricStatistics
@@ -43,7 +53,7 @@ public interface MetricsProcessor {
      * @param namespaceMetricStats NamespaceMetricStatistics
      * @return Map of statistics
      */
-    Map<String, Double> createMetricStatsMapForUpload(NamespaceMetricStatistics namespaceMetricStats);
+    List<Metric> createMetricStatsMapForUpload(NamespaceMetricStatistics namespaceMetricStats);
 
     /**
      * @return the Namespace

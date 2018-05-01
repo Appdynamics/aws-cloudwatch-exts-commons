@@ -1,3 +1,10 @@
+/*
+ * Copyright 2018. AppDynamics LLC and its affiliates.
+ * All Rights Reserved.
+ * This is unpublished proprietary source code of AppDynamics LLC and its affiliates.
+ * The copyright notice above does not evidence any actual or intended publication of such source code.
+ */
+
 package com.appdynamics.extensions.aws.metric;
 
 import org.apache.commons.lang.StringUtils;
@@ -15,7 +22,7 @@ public enum StatisticType {
 	SUM("Sum"),
 	SAMPLE_COUNT("SampleCount");
 	
-	private static Logger LOGGER = Logger.getLogger("com.singularity.extensions.aws.StatisticType");
+	private static Logger LOGGER = Logger.getLogger(StatisticType.class);
 	
 	private String typeName;
 	

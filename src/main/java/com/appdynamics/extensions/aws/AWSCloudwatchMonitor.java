@@ -1,119 +1,125 @@
+/*
+ * Copyright 2018. AppDynamics LLC and its affiliates.
+ * All Rights Reserved.
+ * This is unpublished proprietary source code of AppDynamics LLC and its affiliates.
+ * The copyright notice above does not evidence any actual or intended publication of such source code.
+ */
+
 package com.appdynamics.extensions.aws;
 
-import static com.appdynamics.extensions.aws.Constants.*;
-import static com.appdynamics.extensions.aws.util.AWSUtil.convertToLong;
-import static com.appdynamics.extensions.aws.util.AWSUtil.resolvePath;
-import static com.appdynamics.extensions.yml.YmlReader.readFromFile;
+import com.appdynamics.extensions.ABaseMonitor;
+import com.appdynamics.extensions.TasksExecutionServiceProvider;
+import com.appdynamics.extensions.aws.config.Configuration;
+import com.appdynamics.extensions.aws.config.TaskSchedule;
+import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;
+import com.appdynamics.extensions.conf.MonitorContext;
+import com.appdynamics.extensions.conf.MonitorContextConfiguration;
+import com.appdynamics.extensions.conf.modules.JobScheduleModule;
+import com.appdynamics.extensions.metrics.Metric;
+import org.apache.log4j.Logger;
+import org.yaml.snakeyaml.Yaml;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;
-import com.singularity.ee.agent.systemagent.api.AManagedMonitor;
-import com.singularity.ee.agent.systemagent.api.MetricWriter;
-import com.singularity.ee.agent.systemagent.api.TaskExecutionContext;
-import com.singularity.ee.agent.systemagent.api.TaskOutput;
-import com.singularity.ee.agent.systemagent.api.exception.TaskExecutionException;
-
 /**
- * @author Florencio Sarmiento
- *
  * @param <T> Configuration class
+ * @author Florencio Sarmiento
  */
-public abstract class AWSCloudwatchMonitor<T> extends AManagedMonitor {
+public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
 
-	private Class<T> clazz;
+    private Class<T> clazz;
+    private T config;
 
-	public AWSCloudwatchMonitor(Class<T> clazz) {
-		this.clazz = clazz;
-	}
+    public AWSCloudwatchMonitor(Class<T> clazz) {
+        this.clazz = clazz;
+    }
 
-	public TaskOutput execute(Map<String, String> args,
-			TaskExecutionContext paramTaskExecutionContext)
-			throws TaskExecutionException {
-		getLogger().info("Starting AWS Cloudwatch Monitoring task");
+    @Override
+    protected void onConfigReload(File file) {
+        Yaml yaml = new Yaml();
+        try {
+            config = yaml.loadAs(new FileInputStream(file), clazz);
+        } catch (FileNotFoundException e) {
+            getLogger().error("Error wile reading the config file", e);
+        }
 
-		if (getLogger().isDebugEnabled()) {
-			getLogger().debug(String.format("Args received were: %s", args));
-		}
+        initialize(config);
+        initializeJobScheduler();
+    }
 
-		if (args != null) {
-			try {
-				String configFilename = resolvePath(args.get(CONFIG_ARG));
-				T config = readFromFile(configFilename, clazz);
-				
-				initialiseServiceProviders(config, args);
-				
-				Map<String, Double> statsForUpload = getStatsForUpload(config);
-				uploadStats(statsForUpload, config);
-				
-				return new TaskOutput("AWS Cloudwatch Monitoring task successfully completed");
+    private void initializeJobScheduler() {
 
-			} catch (Exception ex) {
-				getLogger().error("Unfortunately an issue has occurred: ", ex);
-			}
-		}
+        Configuration configuration = (Configuration) config;
 
-		throw new TaskExecutionException(
-				"AWS Cloudwatch Monitoring task completed with failures.");
-	}
-	
-	protected void initialiseServiceProviders(T config, Map<String, String> paramArgs) {
-		RegionEndpointProvider regionEndpointProvider = 
-				RegionEndpointProvider.getInstance();
-		regionEndpointProvider.initialise(paramArgs.get(CONFIG_REGION_ENDPOINTS_ARG));		
-	}
+        TaskSchedule taskSchedule = configuration.getTaskSchedule();
 
-	private void uploadStats(Map<String, Double> statsForUpload, T config) {
-		String metricPrefix = doGetMetricPrefix(config);
-		
-		for (Map.Entry<String, Double> stat : statsForUpload.entrySet()) {
-			printCollectiveObservedCurrent(metricPrefix + stat.getKey(), stat.getValue());
-		}
-	}
+        //Make sure taskSchedule is not defined in the config file
+        if (taskSchedule != null) {
+            getLogger().error("Please do not define taskSchedule in config file. Extension creates taskSchedule based on the CloudWatch monitor level.");
+            throw new IllegalArgumentException("Please do not define taskSchedule in config file. Extension creates taskSchedule based on the CloudWatch monitor level.");
+        }
 
-	private void printCollectiveObservedCurrent(String metricName,
-			Double metricValue) {
-		printMetric(metricName, metricValue,
-				MetricWriter.METRIC_AGGREGATION_TYPE_OBSERVATION,
-				MetricWriter.METRIC_TIME_ROLLUP_TYPE_CURRENT,
-				MetricWriter.METRIC_CLUSTER_ROLLUP_TYPE_COLLECTIVE);
-	}
+        String cloudWatchMonitoring = configuration.getCloudWatchMonitoring();
+        int taskDelaySeconds = -1;
 
-	private void printMetric(String metricName, Double metricValue,
-			String aggregation, String timeRollup, String cluster) {
-		MetricWriter metricWriter = getMetricWriter(metricName, aggregation,
-				timeRollup, cluster);
+        if (Configuration.CloudWatchMonitoringLevel.BASIC.getLevel().equalsIgnoreCase(cloudWatchMonitoring)) {
+            taskDelaySeconds = 300; //Every 5 minutes
+        } else if (Configuration.CloudWatchMonitoringLevel.DETAILED.getLevel().equalsIgnoreCase(cloudWatchMonitoring)) {
+            taskDelaySeconds = 60; //Every minute
+        }
 
-		Long valueToReport = convertToLong(metricValue);
+        if (configuration.getCloudWatchMonitoringInterval() > 0) {
+            taskDelaySeconds = configuration.getCloudWatchMonitoringInterval() * 60;
+        }
 
-		if (getLogger().isDebugEnabled()) {
-			getLogger().debug(String
-					.format("Sending [%s/%s/%s] metric = %s = %s => %s",
-							aggregation, timeRollup, cluster, metricName,
-							metricValue, valueToReport));
-		}
+        Map<String, Map<String, Integer>> dynamicConfig = new HashMap<>();
 
-		metricWriter.printMetric(valueToReport.toString());
-	}
-	
-	private String doGetMetricPrefix(T config) {
-		String metricPrefix = getMetricPrefix(config);
-		
-		if (StringUtils.isNotBlank(metricPrefix) && 
-				!metricPrefix.endsWith(METRIC_PATH_SEPARATOR)) {
-			metricPrefix = metricPrefix + METRIC_PATH_SEPARATOR;
-		}
-		
-		return metricPrefix;
-	}
-	
-	protected abstract Map<String, Double> getStatsForUpload(T config);
-	
-	protected abstract String getMetricPrefix(T config);
+        Map<String, Integer> taskScheduleMap = new HashMap<>();
+        taskScheduleMap.put("numberOfThreads", 1);
+        taskScheduleMap.put("taskDelaySeconds", taskDelaySeconds);
 
-	protected abstract Logger getLogger();
+        dynamicConfig.put("taskSchedule", taskScheduleMap);
 
+
+        JobScheduleModule jobScheduleModule = new JobScheduleModule();
+        jobScheduleModule.initScheduledJob(dynamicConfig, monitorName, monitorJob);
+
+        MonitorContextConfiguration contextConfiguration = getContextConfiguration();
+        MonitorContext context = contextConfiguration.getContext();
+        context.setJobScheduleModule(jobScheduleModule);
+    }
+
+    @Override
+    protected void doRun(TasksExecutionServiceProvider serviceProvider) {
+        getLogger().info("Starting AWS Cloudwatch Monitoring task");
+
+        try {
+            List<Metric> statsForUpload = getStatsForUpload(config);
+
+            serviceProvider.getMetricWriteHelper().transformAndPrintMetrics(statsForUpload);
+            serviceProvider.getMetricWriteHelper().onComplete();
+
+        } catch (Exception ex) {
+            getLogger().error("Unfortunately an issue has occurred: ", ex);
+        }
+    }
+
+    protected void initialiseRegionServiceProviders(T config) {
+        Configuration thisConfig = (Configuration) config;
+        RegionEndpointProvider regionEndpointProvider = RegionEndpointProvider.getInstance();
+        regionEndpointProvider.initialise(thisConfig.getRegionEndPoints());
+    }
+
+    protected void initialize(T config) {
+        initialiseRegionServiceProviders(config);
+    }
+
+    protected abstract List<Metric> getStatsForUpload(T config);
+
+    protected abstract Logger getLogger();
 }
