@@ -19,6 +19,15 @@ proxyConfig:
     username:
     password:
 
+
+dimensions:
+   - name: "LoadBalancerName"
+     displayName: "LoadBalancer Name"
+     values: ["loadBalancer1", "loadBalancer2"]
+   - name: "AvailabilityZone"
+     displayName: "Availability Zone"
+     values: ["us-east-1a", "us-east-1b"]
+
 ec2InstanceNameConfig:
     useNameInMetrics: "true"
     tagFilterName: "tag-key"

@@ -35,6 +35,8 @@ public class Configuration {
 
     private int cloudWatchMonitoringInterval;
 
+    private List<Dimension> dimensions;
+
     public List<Account> getAccounts() {
         return accounts;
     }
@@ -134,5 +136,13 @@ public class Configuration {
             return level;
         }
 
+    }
+
+    public List<Dimension> getDimensions() {
+        return dimensions;
+    }
+
+    public void setDimensions(List<Dimension> dimensions) {
+        this.dimensions = dimensions;
     }
 }
