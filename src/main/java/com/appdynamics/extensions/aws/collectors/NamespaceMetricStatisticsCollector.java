@@ -17,6 +17,8 @@ import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
 import com.appdynamics.extensions.aws.config.MetricsConfig;
 import com.appdynamics.extensions.aws.config.ProxyConfig;
+import com.appdynamics.extensions.aws.config.ControllerInformation;
+import com.appdynamics.extensions.aws.config.DashboardConfig;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
@@ -63,6 +65,8 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
     private LongAdder awsRequestsCounter = new LongAdder();
 
     private String metricPrefix;
+    private DashboardConfig dashboardConfig;
+    private ControllerInformation controllerInformation;
 
     private NamespaceMetricStatisticsCollector(Builder builder) {
         this.accounts = builder.accounts;
@@ -72,6 +76,9 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
         this.credentialsDecryptionConfig = builder.credentialsDecryptionConfig;
         this.proxyConfig = builder.proxyConfig;
         this.metricPrefix = builder.metricPrefix;
+        this.dashboardConfig = builder.dashboardConfig;
+        this.controllerInformation = builder.controllerInfo;
+
     }
 
     /**
@@ -198,16 +205,20 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
         private CredentialsDecryptionConfig credentialsDecryptionConfig;
         private ProxyConfig proxyConfig;
         private String metricPrefix;
+        private DashboardConfig dashboardConfig;
+        private ControllerInformation controllerInfo;
 
         public Builder(List<Account> accounts,
                        ConcurrencyConfig concurrencyConfig,
                        MetricsConfig metricsConfig,
-                       MetricsProcessor metricsProcessor, String metricPrefix) {
+                       MetricsProcessor metricsProcessor, String metricPrefix, DashboardConfig dashboardConfig, ControllerInformation controllerInformation) {
             this.accounts = accounts;
             this.concurrencyConfig = concurrencyConfig;
             this.metricsConfig = metricsConfig;
             this.metricsProcessor = metricsProcessor;
             this.metricPrefix = metricPrefix;
+            this.dashboardConfig = dashboardConfig;
+            this.controllerInfo = controllerInformation;
         }
 
         public Builder withCredentialsDecryptionConfig(CredentialsDecryptionConfig credentialsDecryptionConfig) {

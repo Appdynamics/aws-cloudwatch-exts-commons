@@ -7,6 +7,8 @@
 
 package com.appdynamics.extensions.aws.config;
 
+import com.appdynamics.extensions.conf.ControllerInfo;
+
 import java.util.List;
 import java.util.Map;
 
@@ -36,6 +38,27 @@ public class Configuration {
     private int cloudWatchMonitoringInterval;
 
     private List<Dimension> dimensions;
+
+    private ControllerInformation controllerInfo;
+
+    public DashboardConfig getCustomDashboard() {
+        return customDashboard;
+    }
+
+    public void setCustomDashboard(DashboardConfig dashboardConfig) {
+        this.customDashboard = dashboardConfig;
+    }
+
+    private DashboardConfig customDashboard;
+
+    public ControllerInformation getControllerInfo() {
+        return controllerInfo;
+    }
+
+    public void setControllerInfo(ControllerInformation controllerInformation) {
+        this.controllerInfo = controllerInformation;
+    }
+
 
     public List<Account> getAccounts() {
         return accounts;

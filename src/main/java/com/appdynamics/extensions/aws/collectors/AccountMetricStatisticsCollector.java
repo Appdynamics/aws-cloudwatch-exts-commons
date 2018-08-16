@@ -17,10 +17,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.appdynamics.extensions.MonitorExecutorService;
 import com.appdynamics.extensions.MonitorThreadPoolExecutor;
-import com.appdynamics.extensions.aws.config.Account;
-import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
-import com.appdynamics.extensions.aws.config.MetricsTimeRange;
-import com.appdynamics.extensions.aws.config.ProxyConfig;
+import com.appdynamics.extensions.aws.config.*;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
@@ -72,6 +69,10 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
     private String metricPrefix;
 
+    private DashboardConfig dashboardConfig;
+    private ControllerInformation controllerInformation;
+
+
     private AccountMetricStatisticsCollector(Builder builder) {
         this.account = builder.account;
         this.noOfMetricThreadsPerRegion = builder.noOfMetricThreadsPerRegion;
@@ -83,6 +84,9 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         this.awsRequestsCounter = builder.awsRequestsCounter;
         this.metricPrefix = builder.metricPrefix;
         this.threadTimeOut = builder.threadTimeOut;
+        this.dashboardConfig = dashboardConfig;
+        this.controllerInformation = controllerInformation;
+
 
         setNoOfRegionThreadsPerAccount(builder.noOfRegionThreadsPerAccount);
         setMaxErrorRetrySize(builder.maxErrorRetrySize);
@@ -219,6 +223,8 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         private RateLimiter rateLimiter;
         private LongAdder awsRequestsCounter;
         private String metricPrefix;
+        private DashboardConfig dashboardConfig;
+        private ControllerInformation controllerInfo;
 
         public Builder withAccount(Account account) {
             this.account = account;
@@ -283,6 +289,17 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
             this.threadTimeOut = threadTimeOut;
             return this;
         }
+
+        Builder withDashboardConfig(DashboardConfig dashboardConfig) {
+            this.dashboardConfig = dashboardConfig;
+            return this;
+        }
+        Builder withControllerInformation(ControllerInformation controllerInformation) {
+            this.controllerInfo = controllerInformation;
+            return this;
+        }
+
+
     }
 
 }
