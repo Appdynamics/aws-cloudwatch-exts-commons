@@ -7,18 +7,9 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.validators.Validator.validateNamespace;
-
 import com.appdynamics.extensions.MonitorExecutorService;
 import com.appdynamics.extensions.MonitorThreadPoolExecutor;
-import com.appdynamics.extensions.aws.config.Account;
-import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
-import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
-import com.appdynamics.extensions.aws.config.MetricsConfig;
-import com.appdynamics.extensions.aws.config.ProxyConfig;
-import com.appdynamics.extensions.aws.config.ControllerInformation;
-import com.appdynamics.extensions.aws.config.DashboardConfig;
+import com.appdynamics.extensions.aws.config.*;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
@@ -31,15 +22,11 @@ import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
+
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
+import static com.appdynamics.extensions.aws.validators.Validator.validateNamespace;
 
 /**
  * Collects statistics (of all specified accounts) for specified namespace
@@ -78,7 +65,6 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
         this.metricPrefix = builder.metricPrefix;
         this.dashboardConfig = builder.dashboardConfig;
         this.controllerInformation = builder.controllerInfo;
-
     }
 
     /**

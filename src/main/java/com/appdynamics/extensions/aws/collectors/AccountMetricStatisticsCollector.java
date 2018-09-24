@@ -7,17 +7,14 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_MAX_ERROR_RETRY;
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSClientConfiguration;
-import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSCredentials;
-import static com.appdynamics.extensions.aws.validators.Validator.validateAccount;
-
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.appdynamics.extensions.MonitorExecutorService;
 import com.appdynamics.extensions.MonitorThreadPoolExecutor;
-import com.appdynamics.extensions.aws.config.*;
+import com.appdynamics.extensions.aws.config.Account;
+import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
+import com.appdynamics.extensions.aws.config.MetricsTimeRange;
+import com.appdynamics.extensions.aws.config.ProxyConfig;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
@@ -29,13 +26,14 @@ import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
+
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_MAX_ERROR_RETRY;
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
+import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSClientConfiguration;
+import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSCredentials;
+import static com.appdynamics.extensions.aws.validators.Validator.validateAccount;
 
 /**
  * Collects statistics (of specified regions) for specified account
@@ -69,10 +67,6 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
     private String metricPrefix;
 
-    private DashboardConfig dashboardConfig;
-    private ControllerInformation controllerInformation;
-
-
     private AccountMetricStatisticsCollector(Builder builder) {
         this.account = builder.account;
         this.noOfMetricThreadsPerRegion = builder.noOfMetricThreadsPerRegion;
@@ -84,9 +78,6 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         this.awsRequestsCounter = builder.awsRequestsCounter;
         this.metricPrefix = builder.metricPrefix;
         this.threadTimeOut = builder.threadTimeOut;
-        this.dashboardConfig = dashboardConfig;
-        this.controllerInformation = controllerInformation;
-
 
         setNoOfRegionThreadsPerAccount(builder.noOfRegionThreadsPerAccount);
         setMaxErrorRetrySize(builder.maxErrorRetrySize);
@@ -223,8 +214,6 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         private RateLimiter rateLimiter;
         private LongAdder awsRequestsCounter;
         private String metricPrefix;
-        private DashboardConfig dashboardConfig;
-        private ControllerInformation controllerInfo;
 
         public Builder withAccount(Account account) {
             this.account = account;
@@ -289,17 +278,6 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
             this.threadTimeOut = threadTimeOut;
             return this;
         }
-
-        Builder withDashboardConfig(DashboardConfig dashboardConfig) {
-            this.dashboardConfig = dashboardConfig;
-            return this;
-        }
-        Builder withControllerInformation(ControllerInformation controllerInformation) {
-            this.controllerInfo = controllerInformation;
-            return this;
-        }
-
-
     }
 
 }

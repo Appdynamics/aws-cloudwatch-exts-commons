@@ -7,8 +7,6 @@
 
 package com.appdynamics.extensions.aws.config;
 
-import com.appdynamics.extensions.conf.ControllerInfo;
-
 import java.util.List;
 import java.util.Map;
 

@@ -97,8 +97,6 @@ public class NamespaceMetricStatisticsCollectorTest {
         when(mockBuilder.withRateLimiter(any(RateLimiter.class))).thenReturn(mockBuilder);
         when(mockBuilder.withAWSRequestCounter(any(LongAdder.class))).thenReturn(mockBuilder);
         when(mockBuilder.withPrefix(anyString())).thenReturn(mockBuilder);
-        when(mockBuilder.withDashboardConfig(any(DashboardConfig.class))).thenReturn(mockBuilder);
-        when(mockBuilder.withControllerInformation(any(ControllerInformation.class))).thenReturn(mockBuilder);
 
         when(mockBuilder.build()).thenReturn(mockAccountStatsCollector1, mockAccountStatsCollector2);
 

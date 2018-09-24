@@ -4,3 +4,4 @@
 target/
 class_diagram.ucls
 .idea
+.iml
