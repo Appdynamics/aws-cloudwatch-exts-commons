@@ -7,9 +7,6 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.validators.Validator.validateRegion;
-
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
@@ -18,6 +15,7 @@ import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.appdynamics.extensions.MonitorExecutorService;
 import com.appdynamics.extensions.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
+import com.appdynamics.extensions.aws.config.Period;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
@@ -30,13 +28,11 @@ import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
+
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
+import static com.appdynamics.extensions.aws.validators.Validator.validateRegion;
 
 /**
  * Collects statistics (of specified metrics) for specified region.
@@ -67,6 +63,8 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
     private String metricPrefix;
 
+    private Period periodInSeconds;
+
     private RegionMetricStatisticsCollector(Builder builder) {
 
         this.accountName = builder.accountName;
@@ -78,6 +76,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         this.awsRequestsCounter = builder.awsRequestsCounter;
         this.metricPrefix = builder.metricPrefix;
         this.threadTimeOut = builder.threadTimeOut;
+        this.periodInSeconds = builder.periodInSeconds;
 
         setNoOfMetricThreadsPerRegion(builder.noOfMetricThreadsPerRegion);
     }
@@ -157,6 +156,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                             .withAwsCloudWatch(awsCloudWatch)
                             .withMetric(metric)
                             .withMetricsTimeRange(metricsTimeRange)
+                            .withPeriod(periodInSeconds)
                             .withStatType(metricsProcessor.getStatisticType(metric))
                             .withAWSRequestCounter(awsRequestsCounter)
                             .withPrefix(metricPrefix)
@@ -224,6 +224,8 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         private String metricPrefix;
 
+        private Period periodInSeconds;
+
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
             return this;
@@ -281,6 +283,11 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         public Builder withThreadTimeOut(int threadTimeOut) {
             this.threadTimeOut = threadTimeOut;
+            return this;
+        }
+
+        public Builder withPeriodInSeconds(Period periodInSeconds) {
+            this.periodInSeconds = periodInSeconds;
             return this;
         }
     }

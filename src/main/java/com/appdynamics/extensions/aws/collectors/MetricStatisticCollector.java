@@ -21,6 +21,7 @@ import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.StatisticType;
+import com.appdynamics.extensions.aws.config.Period;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -66,6 +67,8 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
     private String metricPrefix;
 
+    private int periodInSeconds;
+
     private MetricStatisticCollector(Builder builder) {
 
         this.accountName = builder.accountName;
@@ -91,6 +94,16 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
         setStartTimeInMinsBeforeNow(startTimeInMinsBeforeNow);
         setEndTimeInMinsBeforeNow(endTimeInMinsBeforeNow);
+
+        Period periodInSecondsLocal = metric.getIncludeMetric().getPeriodInSeconds();
+        int periodInSeconds = builder.periodInSeconds.getPeriodInSeconds();
+
+        if(periodInSecondsLocal != null){
+            periodInSeconds = periodInSecondsLocal.getPeriodInSeconds();
+        }
+
+        setPeriodInSeconds(periodInSeconds);
+
     }
 
     /**
@@ -145,7 +158,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
                         .minusMinutes(startTimeInMinsBeforeNow).toDate())
                 .withNamespace(metric.getMetric().getNamespace())
                 .withDimensions(metric.getMetric().getDimensions())
-                .withPeriod(DEFAULT_METRIC_PERIOD_IN_SEC)
+                .withPeriod(periodInSeconds)
                 .withMetricName(metric.getIncludeMetric().getName())
                 .withStatistics(statType.getTypeName())
                 .withEndTime(DateTime.now(DateTimeZone.UTC)
@@ -238,6 +251,10 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
                 DEFAULT_END_TIME_IN_MINS_BEFORE_NOW : endTimeInMinsBeforeNow;
     }
 
+    private void setPeriodInSeconds (int periodInSeconds){
+        this.periodInSeconds = periodInSeconds < 0 ? DEFAULT_METRIC_PERIOD_IN_SEC : periodInSeconds;
+    }
+
     /**
      * Builder class to maintain readability when
      * building {@link MetricStatisticCollector} due to its params size
@@ -259,6 +276,8 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         private LongAdder awsRequestsCounter;
 
         private String metricPrefix;
+
+        private Period periodInSeconds;
 
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
@@ -303,5 +322,11 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
             this.metricPrefix = metricPrefix;
             return this;
         }
+
+        public Builder withPeriod(Period periodInSeconds) {
+            this.periodInSeconds = periodInSeconds;
+            return this;
+        }
+
     }
 }

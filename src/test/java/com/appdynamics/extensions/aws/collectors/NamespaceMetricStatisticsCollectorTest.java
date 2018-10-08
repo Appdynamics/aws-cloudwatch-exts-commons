@@ -7,23 +7,7 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
-
-import com.appdynamics.extensions.aws.config.Account;
-import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
-import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
-import com.appdynamics.extensions.aws.config.IncludeMetric;
-import com.appdynamics.extensions.aws.config.MetricsConfig;
-import com.appdynamics.extensions.aws.config.MetricsTimeRange;
-import com.appdynamics.extensions.aws.config.ProxyConfig;
+import com.appdynamics.extensions.aws.config.*;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
@@ -46,6 +30,14 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.atomic.LongAdder;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.*;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({NamespaceMetricStatisticsCollector.class,
@@ -88,6 +80,7 @@ public class NamespaceMetricStatisticsCollectorTest {
         when(mockBuilder.withMaxErrorRetrySize(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsProcessor(any(MetricsProcessor.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withPeriod(any(Period.class))).thenReturn(mockBuilder);
         when(mockBuilder.withNoOfMetricThreadsPerRegion(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withNoOfRegionThreadsPerAccount(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withThreadTimeOut(anyInt())).thenReturn(mockBuilder);

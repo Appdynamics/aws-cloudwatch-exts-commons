@@ -7,20 +7,12 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
-
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.model.Datapoint;
-import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
-import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
-import com.amazonaws.services.cloudwatch.model.Metric;
-import com.amazonaws.services.cloudwatch.model.StandardUnit;
+import com.amazonaws.services.cloudwatch.model.*;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
+import com.appdynamics.extensions.aws.config.Period;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
@@ -38,6 +30,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.LongAdder;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MetricStatisticsCollectorTest {
@@ -64,10 +61,14 @@ public class MetricStatisticsCollectorTest {
 
     private LongAdder requestCounter = new LongAdder();
 
+    @Mock
+    private Period periodInSeconds;
+
     @Before
     public void setup() {
         when(mockAWSMetric.getIncludeMetric()).thenReturn(mockIncludeMetric);
         when(mockAWSMetric.getMetric()).thenReturn(mockMetric);
+        when(periodInSeconds.getPeriodInSeconds()).thenReturn(60);
     }
 
     @Test(expected = AwsException.class)
@@ -78,6 +79,7 @@ public class MetricStatisticsCollectorTest {
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(invalidTimeRange)
+                .withPeriod(periodInSeconds)
                 .withMetric(mockAWSMetric)
                 .withAWSRequestCounter(requestCounter)
                 .build();
@@ -92,6 +94,7 @@ public class MetricStatisticsCollectorTest {
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(new MetricsTimeRange())
+                .withPeriod(periodInSeconds)
                 .withMetric(mockAWSMetric)
                 .withAwsCloudWatch(mockAwsCloudWatch)
                 .withAWSRequestCounter(requestCounter)
@@ -121,6 +124,7 @@ public class MetricStatisticsCollectorTest {
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(new MetricsTimeRange())
+                .withPeriod(periodInSeconds)
                 .withMetric(mockAWSMetric)
                 .withAwsCloudWatch(mockAwsCloudWatch)
                 .withStatType(StatisticType.SUM)
@@ -144,6 +148,7 @@ public class MetricStatisticsCollectorTest {
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(new MetricsTimeRange())
+                .withPeriod(periodInSeconds)
                 .withMetric(mockAWSMetric)
                 .withAwsCloudWatch(mockAwsCloudWatch)
                 .withStatType(StatisticType.SUM)
@@ -172,6 +177,7 @@ public class MetricStatisticsCollectorTest {
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(timeRange)
+                .withPeriod(periodInSeconds)
                 .withMetric(mockAWSMetric)
                 .withAWSRequestCounter(requestCounter)
                 .build();

@@ -96,6 +96,8 @@ metricsConfig:
       startTimeInMinsBeforeNow: 10
       endTimeInMinsBeforeNow: 0
 
+    periodInSeconds: 60
+
     # Rate limit ( per second ) for GetMetricStatistics, default value is 400. https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_limits.html
     getMetricStatisticsRateLimit: 400
 
