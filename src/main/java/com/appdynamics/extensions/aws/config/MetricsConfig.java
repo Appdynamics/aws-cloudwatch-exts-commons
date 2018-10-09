@@ -22,7 +22,7 @@ public class MetricsConfig {
 
     private int maxErrorRetrySize;
 
-    private Period periodInSeconds;
+    private int periodInSeconds;
 
     public List<IncludeMetric> getIncludeMetrics() {
         return includeMetrics;
@@ -56,7 +56,7 @@ public class MetricsConfig {
         this.maxErrorRetrySize = maxErrorRetrySize;
     }
 
-    public Period getPeriodInSeconds() { return periodInSeconds; }
+    public int getPeriodInSeconds() { return periodInSeconds; }
 
-    public void setPeriodInSeconds(Period periodInSeconds) { this.periodInSeconds = periodInSeconds; }
+    public void setPeriodInSeconds(int periodInSeconds) { this.periodInSeconds = periodInSeconds; }
 }

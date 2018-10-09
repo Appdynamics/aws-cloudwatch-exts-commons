@@ -64,7 +64,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
     private String metricPrefix;
 
-    private Period periodInSeconds;
+    private int periodInSeconds;
 
     private AccountMetricStatisticsCollector(Builder builder) {
         this.account = builder.account;
@@ -215,7 +215,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         private RateLimiter rateLimiter;
         private LongAdder awsRequestsCounter;
         private String metricPrefix;
-        private Period periodInSeconds;
+        private int periodInSeconds;
 
         public Builder withAccount(Account account) {
             this.account = account;
@@ -281,7 +281,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
             return this;
         }
 
-        public Builder withPeriod(Period periodInSeconds) {
+        public Builder withPeriod(int periodInSeconds) {
             this.periodInSeconds = periodInSeconds;
             return this;
         }

@@ -80,7 +80,7 @@ public class NamespaceMetricStatisticsCollectorTest {
         when(mockBuilder.withMaxErrorRetrySize(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsProcessor(any(MetricsProcessor.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
-        when(mockBuilder.withPeriod(any(Period.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withPeriod(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withNoOfMetricThreadsPerRegion(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withNoOfRegionThreadsPerAccount(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withThreadTimeOut(anyInt())).thenReturn(mockBuilder);

@@ -15,7 +15,6 @@ import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.appdynamics.extensions.MonitorExecutorService;
 import com.appdynamics.extensions.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
-import com.appdynamics.extensions.aws.config.Period;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
@@ -63,7 +62,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
     private String metricPrefix;
 
-    private Period periodInSeconds;
+    private int periodInSeconds;
 
     private RegionMetricStatisticsCollector(Builder builder) {
 
@@ -224,7 +223,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         private String metricPrefix;
 
-        private Period periodInSeconds;
+        private int periodInSeconds;
 
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
@@ -286,7 +285,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
             return this;
         }
 
-        public Builder withPeriodInSeconds(Period periodInSeconds) {
+        public Builder withPeriodInSeconds(int periodInSeconds) {
             this.periodInSeconds = periodInSeconds;
             return this;
         }

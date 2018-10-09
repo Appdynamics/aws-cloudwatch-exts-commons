@@ -17,11 +17,12 @@ import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
+import com.appdynamics.extensions.aws.config.PeriodInSeconds;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.StatisticType;
-import com.appdynamics.extensions.aws.config.Period;
+import com.appdynamics.extensions.aws.config.PeriodInSeconds;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -95,11 +96,11 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         setStartTimeInMinsBeforeNow(startTimeInMinsBeforeNow);
         setEndTimeInMinsBeforeNow(endTimeInMinsBeforeNow);
 
-        Period periodInSecondsLocal = metric.getIncludeMetric().getPeriodInSeconds();
-        int periodInSeconds = builder.periodInSeconds.getPeriodInSeconds();
+        int periodInSecondsLocal = metric.getIncludeMetric().getPeriodInSeconds();
+        int periodInSeconds = builder.periodInSeconds;
 
-        if(periodInSecondsLocal != null){
-            periodInSeconds = periodInSecondsLocal.getPeriodInSeconds();
+        if(periodInSecondsLocal < 0){
+            periodInSeconds = periodInSecondsLocal;
         }
 
         setPeriodInSeconds(periodInSeconds);
@@ -277,7 +278,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
         private String metricPrefix;
 
-        private Period periodInSeconds;
+        private int periodInSeconds;
 
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
@@ -323,7 +324,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
             return this;
         }
 
-        public Builder withPeriod(Period periodInSeconds) {
+        public Builder withPeriod(int periodInSeconds) {
             this.periodInSeconds = periodInSeconds;
             return this;
         }

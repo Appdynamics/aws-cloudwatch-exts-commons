@@ -14,7 +14,6 @@ import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.Metric;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
-import com.appdynamics.extensions.aws.config.Period;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
@@ -140,7 +139,7 @@ public class RegionMetricStatisticsCollectorTest {
         when(mockBuilder.withAwsCloudWatch(mockAwsCloudWatch)).thenReturn(mockBuilder);
         when(mockBuilder.withMetric(any(AWSMetric.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
-        when(mockBuilder.withPeriod(any(Period.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withPeriod(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withRegion(anyString())).thenReturn(mockBuilder);
         when(mockBuilder.withStatType(any(StatisticType.class))).thenReturn(mockBuilder);
         when(mockBuilder.withAWSRequestCounter(requestsCounter)).thenReturn(mockBuilder);
@@ -208,7 +207,7 @@ public class RegionMetricStatisticsCollectorTest {
         when(mockBuilder.withAwsCloudWatch(mockAwsCloudWatch)).thenReturn(mockBuilder);
         when(mockBuilder.withMetric(any(AWSMetric.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
-        when(mockBuilder.withPeriod(any(Period.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withPeriod(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withRegion(anyString())).thenReturn(mockBuilder);
         when(mockBuilder.withStatType(any(StatisticType.class))).thenReturn(mockBuilder);
         when(mockBuilder.withAWSRequestCounter(requestsCounter)).thenReturn(mockBuilder);

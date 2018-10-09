@@ -12,7 +12,6 @@ import com.amazonaws.auth.AWSCredentials;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
-import com.appdynamics.extensions.aws.config.Period;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
@@ -94,7 +93,7 @@ public class AccountMetricStatisticsCollectorTest {
         when(mockBuilder.withMetricsProcessor(any(MetricsProcessor.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
         when(mockBuilder.withNoOfMetricThreadsPerRegion(anyInt())).thenReturn(mockBuilder);
-        when(mockBuilder.withPeriodInSeconds(any(Period.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withPeriodInSeconds(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withThreadTimeOut(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withRegion(anyString())).thenReturn(mockBuilder);
         when(mockBuilder.withRateLimiter(any(RateLimiter.class))).thenReturn(mockBuilder);

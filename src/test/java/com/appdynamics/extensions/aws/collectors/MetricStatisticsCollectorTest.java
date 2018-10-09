@@ -12,7 +12,6 @@ import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.model.*;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
-import com.appdynamics.extensions.aws.config.Period;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
@@ -62,13 +61,13 @@ public class MetricStatisticsCollectorTest {
     private LongAdder requestCounter = new LongAdder();
 
     @Mock
-    private Period periodInSeconds;
+    private int periodInSeconds;
 
     @Before
     public void setup() {
         when(mockAWSMetric.getIncludeMetric()).thenReturn(mockIncludeMetric);
         when(mockAWSMetric.getMetric()).thenReturn(mockMetric);
-        when(periodInSeconds.getPeriodInSeconds()).thenReturn(60);
+
     }
 
     @Test(expected = AwsException.class)

@@ -37,6 +37,7 @@ public class Configuration {
 
     private List<Dimension> dimensions;
 
+
     public List<Account> getAccounts() {
         return accounts;
     }
@@ -145,4 +146,6 @@ public class Configuration {
     public void setDimensions(List<Dimension> dimensions) {
         this.dimensions = dimensions;
     }
+
+
 }

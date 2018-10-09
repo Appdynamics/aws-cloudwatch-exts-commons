@@ -31,7 +31,7 @@ public class IncludeMetric {
 
     private MetricsTimeRange metricsTimeRange;
 
-    private Period periodInSeconds;
+    private int periodInSeconds;
 
 
 
@@ -107,7 +107,7 @@ public class IncludeMetric {
         this.metricsTimeRange = metricsTimeRange;
     }
 
-    public Period getPeriodInSeconds() { return periodInSeconds; }
+    public int getPeriodInSeconds() { return periodInSeconds; }
 
-    public void setPeriodInSeconds(Period periodInSeconds) { this.periodInSeconds = periodInSeconds; }
+    public void setPeriodInSeconds(int periodInSeconds) { this.periodInSeconds = periodInSeconds; }
 }
