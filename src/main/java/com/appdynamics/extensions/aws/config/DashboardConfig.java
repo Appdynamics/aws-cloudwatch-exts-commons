@@ -13,11 +13,20 @@ package com.appdynamics.extensions.aws.config;
  */
 public class DashboardConfig {
 
-    private Boolean enabled ;
+    private Boolean enabled;
     private String dashboardName;
-    private Integer executionFrequencyMinutes ;
+    private Integer executionFrequencyMinutes;
     private String pathToSIMDashboard;
     private String pathToNormalDashboard;
+    private Integer periodToCheckDashboardPresenceInSeconds;
+
+    public Integer getPeriodToCheckDashboardPresenceInSeconds() {
+        return periodToCheckDashboardPresenceInSeconds;
+    }
+
+    public void setPeriodToCheckDashboardPresenceInSeconds(Integer periodToCheckDashboardPresenceInSeconds) {
+        this.periodToCheckDashboardPresenceInSeconds = periodToCheckDashboardPresenceInSeconds;
+    }
 
     public Boolean getEnabled() {
         return enabled;
