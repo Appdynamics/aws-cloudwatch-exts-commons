@@ -200,7 +200,7 @@ customDashboard:
     # Update the path to the dashboard file.
     pathToSIMDashboard: "monitors/AWSELBMonitor/simDashboard.json"
     pathToNormalDashboard: "monitors/AWSELBMonitor/normalDashboard.json"
-    periodToCheckDashboardPresenceInSeconds: 300
+    periodicDashboardCheckInSeconds: 300
 
 # To upload the dashboard, please create a user from Controller UI or
 # add the credentials of an existing user.

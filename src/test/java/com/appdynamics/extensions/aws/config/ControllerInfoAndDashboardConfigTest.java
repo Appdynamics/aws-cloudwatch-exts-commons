@@ -34,7 +34,7 @@ public class ControllerInfoAndDashboardConfigTest {
         Assert.assertTrue(config.getCustomDashboard().getDashboardName().equals("AWS ELB Monitor Dashboard"));
         Assert.assertTrue(config.getCustomDashboard().getPathToNormalDashboard().equals("monitors/AWSELBMonitor/normalDashboard.json"));
         Assert.assertTrue(config.getCustomDashboard().getPathToSIMDashboard().equals("monitors/AWSELBMonitor/simDashboard.json"));
-        Assert.assertTrue(config.getCustomDashboard().getPeriodToCheckDashboardPresenceInSeconds().equals(300));
+        Assert.assertTrue(config.getCustomDashboard().getPeriodicDashboardCheckInSeconds().equals(300));
 
         Assert.assertTrue(config.getControllerInfo().getAccount().equals("account"));
         Assert.assertTrue(config.getControllerInfo().getUsername().equals("admin"));

@@ -18,14 +18,15 @@ public class DashboardConfig {
     private Integer executionFrequencyMinutes;
     private String pathToSIMDashboard;
     private String pathToNormalDashboard;
-    private Integer periodToCheckDashboardPresenceInSeconds;
+    private Integer periodicDashboardCheckInSeconds;
 
-    public Integer getPeriodToCheckDashboardPresenceInSeconds() {
-        return periodToCheckDashboardPresenceInSeconds;
+
+    public Integer getPeriodicDashboardCheckInSeconds() {
+        return periodicDashboardCheckInSeconds;
     }
 
-    public void setPeriodToCheckDashboardPresenceInSeconds(Integer periodToCheckDashboardPresenceInSeconds) {
-        this.periodToCheckDashboardPresenceInSeconds = periodToCheckDashboardPresenceInSeconds;
+    public void setPeriodicDashboardCheckInSeconds(Integer periodicDashboardCheckInSeconds) {
+        this.periodicDashboardCheckInSeconds = periodicDashboardCheckInSeconds;
     }
 
     public Boolean getEnabled() {
