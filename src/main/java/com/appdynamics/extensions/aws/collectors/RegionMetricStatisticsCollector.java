@@ -9,18 +9,20 @@ package com.appdynamics.extensions.aws.collectors;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsync;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsyncClientBuilder;
 import com.appdynamics.extensions.MonitorExecutorService;
 import com.appdynamics.extensions.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
+import com.appdynamics.extensions.aws.config.Tag;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
-import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import org.apache.log4j.Logger;
@@ -31,7 +33,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.validators.Validator.validateRegion;
 
 /**
  * Collects statistics (of specified metrics) for specified region.
@@ -64,11 +65,13 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
     private int periodInSeconds;
 
+    private List<Tag> tags;
+
     private RegionMetricStatisticsCollector(Builder builder) {
 
         this.accountName = builder.accountName;
         this.region = builder.region;
-        this.awsCloudWatch = builder.awsCloudWatch;
+        this.awsCloudWatch = builder.amazonCloudWatchClient;
         this.metricsTimeRange = builder.metricsTimeRange;
         this.metricsProcessor = builder.metricsProcessor;
         this.rateLimiter = builder.rateLimiter;
@@ -76,6 +79,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         this.metricPrefix = builder.metricPrefix;
         this.threadTimeOut = builder.threadTimeOut;
         this.periodInSeconds = builder.periodInSeconds;
+        this.tags = builder.tags;
 
         setNoOfMetricThreadsPerRegion(builder.noOfMetricThreadsPerRegion);
     }
@@ -93,16 +97,16 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         MonitorExecutorService executorService = null;
 
         try {
-            RegionEndpointProvider regionEndpointProvider =
-                    RegionEndpointProvider.getInstance();
+            //RegionEndpointProvider regionEndpointProvider =
+//                    RegionEndpointProvider.getInstance();
 
-            validateRegion(region, regionEndpointProvider);
-
-            LOGGER.info(String.format(
+            //validateRegion(region, regionEndpointProvider);
+           LOGGER.info(String.format(
                     "Collecting RegionMetricStatistics for Namespace [%s] Account [%s] Region [%s]",
                     metricsProcessor.getNamespace(), accountName, region));
 
-            this.awsCloudWatch.setEndpoint(regionEndpointProvider.getEndpoint(region));
+//            this.awsCloudWatch.setEndpoint(regionEndpointProvider.getEndpoint(region));
+            metricsProcessor.filterUsingTags(tags,region);
             List<AWSMetric> metrics = metricsProcessor.getMetrics(awsCloudWatch, accountName, awsRequestsCounter);
 
             regionMetricStats = new RegionMetricStatistics();
@@ -111,8 +115,6 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
             if (metrics != null && !metrics.isEmpty()) {
 
                 executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(noOfMetricThreadsPerRegion));
-
-
                 List<FutureTask<MetricStatistic>> tasks = createConcurrentMetricTasks(
                         executorService, metrics);
                 collectMetrics(tasks, metrics.size(), regionMetricStats);
@@ -159,6 +161,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                             .withStatType(metricsProcessor.getStatisticType(metric))
                             .withAWSRequestCounter(awsRequestsCounter)
                             .withPrefix(metricPrefix)
+                            .withTags(tags)
                             .build();
 
             FutureTask<MetricStatistic> accountTaskExecutor = new FutureTask<MetricStatistic>(metricTask);
@@ -215,7 +218,10 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         private MetricsTimeRange metricsTimeRange;
 
-        private AmazonCloudWatch awsCloudWatch;
+       // private AmazonCloudWatch awsCloudWatch;
+       // private AmazonCloudWatchClientBuilder amazonCloudWatchClientBuilder =  AmazonCloudWatchClientBuilder.standard();
+
+        private AmazonCloudWatchAsync amazonCloudWatchClient;
 
         private RateLimiter rateLimiter;
 
@@ -224,6 +230,8 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         private String metricPrefix;
 
         private int periodInSeconds;
+
+        private List<Tag> tags;
 
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
@@ -249,9 +257,21 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                                                   ClientConfiguration awsClientConfig) {
             if (awsCredentials == null) {
                 LOGGER.info("Credentials not provided trying to use instance profile");
-                this.awsCloudWatch = new AmazonCloudWatchClient(new InstanceProfileCredentialsProvider(), awsClientConfig);
+               // this.awsCloudWatch = new AmazonCloudWatchClient(new InstanceProfileCredentialsProvider(), awsClientConfig);
+                this.amazonCloudWatchClient =  AmazonCloudWatchAsyncClientBuilder.standard()
+                                                .withCredentials(new InstanceProfileCredentialsProvider(true).getInstance())
+                                                .withClientConfiguration(awsClientConfig)
+                                                .withRegion(this.region)
+                                                .build();
             } else {
-                this.awsCloudWatch = new AmazonCloudWatchClient(awsCredentials, awsClientConfig);
+               // this.awsCloudWatch = new AmazonCloudWatchClient(awsCredentials, awsClientConfig);
+                LOGGER.debug("Creating client for "+this.region);
+                this.amazonCloudWatchClient = AmazonCloudWatchAsyncClientBuilder.standard()
+                                                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+                                                .withExecutorFactory(() -> Executors.newFixedThreadPool(10))
+                                                .withRegion(this.region)
+                                                .withClientConfiguration(awsClientConfig)
+                                                .build();
             }
             return this;
         }
@@ -288,6 +308,11 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         public Builder withPeriodInSeconds(int periodInSeconds) {
             this.periodInSeconds = periodInSeconds;
             return this;
+        }
+
+        public Builder withTags(List<Tag> tags){
+            this.tags = tags;
+            return  this;
         }
     }
 }

@@ -7,35 +7,30 @@
 
 package com.appdynamics.extensions.aws.metric.processors;
 
-import static com.appdynamics.extensions.aws.Constants.METRIC_PATH_SEPARATOR;
-
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.model.Dimension;
-import com.amazonaws.services.cloudwatch.model.DimensionFilter;
-import com.amazonaws.services.cloudwatch.model.ListMetricsRequest;
-import com.amazonaws.services.cloudwatch.model.ListMetricsResult;
-import com.amazonaws.services.cloudwatch.model.Metric;
+import com.amazonaws.services.cloudwatch.model.*;
+import com.amazonaws.services.resourcegroupstaggingapi.AWSResourceGroupsTaggingAPI;
+import com.amazonaws.services.resourcegroupstaggingapi.AWSResourceGroupsTaggingAPIClientBuilder;
+import com.amazonaws.services.resourcegroupstaggingapi.model.GetResourcesRequest;
+import com.amazonaws.services.resourcegroupstaggingapi.model.GetResourcesResult;
+import com.amazonaws.services.resourcegroupstaggingapi.model.ResourceTagMapping;
+import com.amazonaws.services.resourcegroupstaggingapi.model.TagFilter;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
+import com.appdynamics.extensions.aws.config.Tag;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
-import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
-import com.appdynamics.extensions.aws.metric.MetricStatistic;
-import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
-import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
-import com.appdynamics.extensions.aws.metric.StatisticType;
+import com.appdynamics.extensions.aws.metric.*;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.appdynamics.extensions.aws.Constants.METRIC_PATH_SEPARATOR;
 
 /**
  * Provides default behaviour and other utility methods
@@ -56,14 +51,15 @@ public class MetricsProcessorHelper {
 
     public static List<AWSMetric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
                                                      LongAdder awsRequestsCounter, String namespace, List<IncludeMetric> includeMetrics, List<DimensionFilter> dimensions) {
-        List<Metric> metrics = getMetrics(awsCloudWatch, awsRequestsCounter, namespace, dimensions);
+        List<Metric> metrics = getMetrics(awsCloudWatch, awsRequestsCounter, namespace);
         return filterMetrics(metrics, includeMetrics);
     }
 
     public static List<AWSMetric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
-                                                     LongAdder awsRequestsCounter, String namespace, List<IncludeMetric> includeMetrics, List<DimensionFilter> dimensions, Predicate<Metric> metricFilter) {
-        List<Metric> metrics = getMetrics(awsCloudWatch, awsRequestsCounter, namespace, dimensions);
+                                                     LongAdder awsRequestsCounter, String namespace, List<IncludeMetric> includeMetrics, List<com.appdynamics.extensions.aws.config.Dimension> dimensions, Predicate<Metric> metricFilter) {
 
+
+        List<Metric> metrics = getMetrics(awsCloudWatch, awsRequestsCounter, namespace);
         metrics = Lists.newArrayList(Collections2.filter(metrics, metricFilter));
 
         return filterMetrics(metrics, includeMetrics);
@@ -80,15 +76,15 @@ public class MetricsProcessorHelper {
             dimensions.add(dimension);
         }
 
-        return getMetrics(awsCloudWatch, awsRequestsCounter, namespace, dimensions);
+        return getMetrics(awsCloudWatch, awsRequestsCounter, namespace);
     }
 
     public static List<Metric> getMetrics(AmazonCloudWatch awsCloudWatch,
-                                          LongAdder awsRequestsCounter, String namespace, List<DimensionFilter> dimensions) {
+                                          LongAdder awsRequestsCounter, String namespace) {
         ListMetricsRequest request = new ListMetricsRequest();
 
         request.withNamespace(namespace);
-        request.withDimensions(dimensions);
+        //request.withDimensions(dimensions);
         ListMetricsResult listMetricsResult = awsCloudWatch.listMetrics(request);
         awsRequestsCounter.increment();
         List<Metric> metrics = listMetricsResult.getMetrics();
@@ -100,6 +96,9 @@ public class MetricsProcessorHelper {
             awsRequestsCounter.increment();
             metrics.addAll(listMetricsResult.getMetrics());
         }
+
+
+
 
         return metrics;
     }
@@ -296,4 +295,26 @@ public class MetricsProcessorHelper {
         return String.format("%s%s", metricPrefix, toAppend);
     }
 
+    public static void filterUsingTags(List<Tag> tags, String nameSpace, String region, List<com.appdynamics.extensions.aws.config.Dimension> dimensions) {
+        List<TagFilter> tagFilters = new ArrayList<>();
+        for(Tag tag: tags){
+            tagFilters.add(new TagFilter().withKey(tag.getTagName()).withValues(tag.getTagValue()));
+        }
+        GetResourcesRequest request = new GetResourcesRequest()
+                .withResourceTypeFilters(nameSpace.split("/")[1].toLowerCase())
+                .withTagFilters(tagFilters);
+
+        AWSResourceGroupsTaggingAPI taggingAPIClient = AWSResourceGroupsTaggingAPIClientBuilder.standard().withRegion(region).build();
+
+        GetResourcesResult result = taggingAPIClient.getResources(request);
+
+        List<ResourceTagMapping> tagList = result.getResourceTagMappingList();
+        for(ResourceTagMapping arn : tagList){
+            String resource = arn.getResourceARN().split(":")[5];
+            LOGGER.debug("MYTAG" + resource);
+
+        }
+
+
+    }
 }

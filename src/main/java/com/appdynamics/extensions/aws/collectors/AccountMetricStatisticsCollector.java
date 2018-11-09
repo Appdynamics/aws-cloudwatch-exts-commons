@@ -66,6 +66,8 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
     private int periodInSeconds;
 
+    private List<Tag> tags;
+
     private AccountMetricStatisticsCollector(Builder builder) {
         this.account = builder.account;
         this.noOfMetricThreadsPerRegion = builder.noOfMetricThreadsPerRegion;
@@ -78,6 +80,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         this.metricPrefix = builder.metricPrefix;
         this.threadTimeOut = builder.threadTimeOut;
         this.periodInSeconds = builder.periodInSeconds;
+        this.tags = builder.tags;
 
         setNoOfRegionThreadsPerAccount(builder.noOfRegionThreadsPerAccount);
         setMaxErrorRetrySize(builder.maxErrorRetrySize);
@@ -147,16 +150,17 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
             RegionMetricStatisticsCollector regionTask =
                     new RegionMetricStatisticsCollector.Builder()
                             .withAccountName(account.getDisplayAccountName())
-                            .withAmazonCloudWatchConfig(awsCredentials, awsClientConfig)
+                            .withRegion(region)
                             .withMetricsProcessor(metricsProcessor)
                             .withMetricsTimeRange(metricsTimeRange)
                             .withPeriodInSeconds(periodInSeconds)
                             .withNoOfMetricThreadsPerRegion(noOfMetricThreadsPerRegion)
                             .withThreadTimeOut(threadTimeOut)
-                            .withRegion(region)
                             .withRateLimiter(rateLimiter)
                             .withAWSRequestCounter(awsRequestsCounter)
                             .withPrefix(metricPrefix)
+                            .withAmazonCloudWatchConfig(awsCredentials, awsClientConfig)
+                            .withTags(tags)
                             .build();
 
             FutureTask<RegionMetricStatistics> regionTaskExecutor = new FutureTask<RegionMetricStatistics>(regionTask);
@@ -216,6 +220,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         private LongAdder awsRequestsCounter;
         private String metricPrefix;
         private int periodInSeconds;
+        private List<Tag> tags;
 
         public Builder withAccount(Account account) {
             this.account = account;
@@ -284,6 +289,11 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         public Builder withPeriod(int periodInSeconds) {
             this.periodInSeconds = periodInSeconds;
             return this;
+        }
+
+        public Builder withTags(List<Tag> tags){
+            this.tags = tags;
+            return  this;
         }
 
     }

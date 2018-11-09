@@ -7,22 +7,23 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_END_TIME_IN_MINS_BEFORE_NOW;
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_METRIC_PERIOD_IN_SEC;
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_START_TIME_IN_MINS_BEFORE_NOW;
-import static com.appdynamics.extensions.aws.validators.Validator.validateTimeRange;
-
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
+import com.amazonaws.services.resourcegroupstaggingapi.AWSResourceGroupsTaggingAPI;
+import com.amazonaws.services.resourcegroupstaggingapi.AWSResourceGroupsTaggingAPIClientBuilder;
+import com.amazonaws.services.resourcegroupstaggingapi.model.GetResourcesRequest;
+import com.amazonaws.services.resourcegroupstaggingapi.model.GetResourcesResult;
+import com.amazonaws.services.resourcegroupstaggingapi.model.ResourceTagMapping;
+import com.amazonaws.services.resourcegroupstaggingapi.model.TagFilter;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
-import com.appdynamics.extensions.aws.config.PeriodInSeconds;
+import com.appdynamics.extensions.aws.config.Tag;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.StatisticType;
-import com.appdynamics.extensions.aws.config.PeriodInSeconds;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -33,6 +34,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.LongAdder;
+
+import static com.appdynamics.extensions.aws.Constants.*;
+import static com.appdynamics.extensions.aws.validators.Validator.validateTimeRange;
 
 /**
  * Retrieves statistics for the specified metric.
@@ -70,6 +74,8 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
     private int periodInSeconds;
 
+    private List<Tag> tags;
+
     private MetricStatisticCollector(Builder builder) {
 
         this.accountName = builder.accountName;
@@ -79,6 +85,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         this.statType = builder.statType;
         this.awsRequestsCounter = builder.awsRequestsCounter;
         this.metricPrefix = builder.metricPrefix;
+        this.tags = builder.tags;
 
         //Check if time ranges are specified locally for a metric. If not use the global time ranges.
         MetricsTimeRange metricsTimeRangeLocal = metric.getIncludeMetric().getMetricsTimeRange();
@@ -280,6 +287,8 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
         private int periodInSeconds;
 
+        private List<Tag> tags;
+
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
             return this;
@@ -326,6 +335,11 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
         public Builder withPeriod(int periodInSeconds) {
             this.periodInSeconds = periodInSeconds;
+            return this;
+        }
+
+        public Builder withTags(List<Tag> tags){
+            this.tags = tags;
             return this;
         }
 

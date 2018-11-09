@@ -53,6 +53,8 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
 
     private String metricPrefix;
 
+    private List<Tag> tags;
+
     private NamespaceMetricStatisticsCollector(Builder builder) {
         this.accounts = builder.accounts;
         this.concurrencyConfig = builder.concurrencyConfig;
@@ -61,6 +63,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
         this.credentialsDecryptionConfig = builder.credentialsDecryptionConfig;
         this.proxyConfig = builder.proxyConfig;
         this.metricPrefix = builder.metricPrefix;
+        this.tags = builder.tags;
     }
 
     /**
@@ -143,6 +146,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
                             .withRateLimiter(RateLimiter.create(metricsConfig.getGetMetricStatisticsRateLimit()))
                             .withAWSRequestCounter(awsRequestsCounter)
                             .withPrefix(metricPrefix)
+                            .withTags(tags)
                             .build();
 
             FutureTask<AccountMetricStatistics> accountTaskExecutor = new FutureTask<AccountMetricStatistics>(accountTask);
@@ -188,6 +192,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
         private CredentialsDecryptionConfig credentialsDecryptionConfig;
         private ProxyConfig proxyConfig;
         private String metricPrefix;
+        private List<Tag> tags;
 
         public Builder(List<Account> accounts,
                        ConcurrencyConfig concurrencyConfig,
@@ -198,6 +203,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
             this.metricsConfig = metricsConfig;
             this.metricsProcessor = metricsProcessor;
             this.metricPrefix = metricPrefix;
+
         }
 
         public Builder withCredentialsDecryptionConfig(CredentialsDecryptionConfig credentialsDecryptionConfig) {
@@ -207,6 +213,11 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
 
         public Builder withProxyConfig(ProxyConfig proxyConfig) {
             this.proxyConfig = proxyConfig;
+            return this;
+        }
+
+        public Builder withTags(List<Tag> tags){
+            this.tags = tags;
             return this;
         }
 

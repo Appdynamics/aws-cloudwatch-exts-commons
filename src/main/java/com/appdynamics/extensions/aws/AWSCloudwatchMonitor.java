@@ -11,7 +11,6 @@ import com.appdynamics.extensions.ABaseMonitor;
 import com.appdynamics.extensions.TasksExecutionServiceProvider;
 import com.appdynamics.extensions.aws.config.Configuration;
 import com.appdynamics.extensions.aws.config.TaskSchedule;
-import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;
 import com.appdynamics.extensions.conf.MonitorContext;
 import com.appdynamics.extensions.conf.MonitorContextConfiguration;
 import com.appdynamics.extensions.conf.modules.JobScheduleModule;
@@ -110,13 +109,13 @@ public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
     }
 
     protected void initialiseRegionServiceProviders(T config) {
-        Configuration thisConfig = (Configuration) config;
-        RegionEndpointProvider regionEndpointProvider = RegionEndpointProvider.getInstance();
-        regionEndpointProvider.initialise(thisConfig.getRegionEndPoints());
+        //Configuration thisConfig = (Configuration) config;
+       // RegionEndpointProvider regionEndpointProvider = RegionEndpointProvider.getInstance();
+        //regionEndpointProvider.initialise(thisConfig.getRegionEndPoints());
     }
 
     protected void initialize(T config) {
-        initialiseRegionServiceProviders(config);
+       // initialiseRegionServiceProviders(config);
     }
 
     protected abstract List<Metric> getStatsForUpload(T config);

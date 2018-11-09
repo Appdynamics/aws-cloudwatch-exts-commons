@@ -37,6 +37,10 @@ public class Configuration {
 
     private List<Dimension> dimensions;
 
+    private List<Tag> tag;
+
+
+
 
     public List<Account> getAccounts() {
         return accounts;
@@ -147,5 +151,11 @@ public class Configuration {
         this.dimensions = dimensions;
     }
 
+    public List<Tag> getTag() {
+        return tag;
+    }
 
+    public void setTag(List<Tag> tag) {
+        this.tag = tag;
+    }
 }

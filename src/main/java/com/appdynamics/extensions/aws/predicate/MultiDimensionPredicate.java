@@ -4,7 +4,7 @@ import com.amazonaws.services.cloudwatch.model.Metric;
 import com.appdynamics.extensions.aws.config.Dimension;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import org.apache.log4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.Set;
  */
 public class MultiDimensionPredicate implements Predicate<Metric> {
 
-    private static final Logger LOGGER = Logger.getLogger(MultiDimensionPredicate.class);
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MultiDimensionPredicate.class);
 
 
     private List<Dimension> dimensions;
@@ -38,18 +38,33 @@ public class MultiDimensionPredicate implements Predicate<Metric> {
                 String dimensionName = dimension.getName();
                 Set<String> dimensionValues = dimension.getValues();
 
-                if (dimensionValues != null) {
+                if(dimensionValues.size() > 0) {
 
-                    for (String pattern : dimensionValues) {
-                        Predicate<CharSequence> charSequencePredicate = Predicates.containsPattern(pattern);
-                        if (patternPredicate == null) {
-                            patternPredicate = charSequencePredicate;
-                        } else {
-                            patternPredicate = Predicates.or(patternPredicate, charSequencePredicate);
+                        for (String pattern : dimensionValues) {
+                            if (!pattern.equals("")) {
+
+                                Predicate<CharSequence> charSequencePredicate = Predicates.containsPattern(pattern);
+                                if (patternPredicate == null) {
+                                    patternPredicate = charSequencePredicate;
+                                } else {
+                                    patternPredicate = Predicates.or(patternPredicate, charSequencePredicate);
+                                }
+                                allPredicates.put(dimensionName, patternPredicate);
+
+                            }
+
+                            else {
+                                LOGGER.warn(" Dimension Value for Dimension {} is blank. Not collecting metrics that require " +
+                                        "this dimension", dimension.getName());
+                            }
+
+//                            allPredicates.put(dimensionName, patternPredicate); - didnt work
                         }
-                    }
+//                        allPredicates.put(dimensionName, patternPredicate);
+
+//                    allPredicates.put(dimensionName, patternPredicate);
                 }
-                allPredicates.put(dimensionName, patternPredicate);
+                LOGGER.warn("Empty Dimension Value for {}", dimension.getName());
             }
         } else {
             LOGGER.warn("dimensions in config.yml not configured, hence not monitoring anything");
