@@ -60,5 +60,5 @@ public interface MetricsProcessor {
      */
     String getNamespace();
 
-    void filterUsingTags(List<Tag> tags, String region);
+    List<AWSMetric> filterUsingTags(List<AWSMetric> metrics, List<Tag> tags, String region);
 }

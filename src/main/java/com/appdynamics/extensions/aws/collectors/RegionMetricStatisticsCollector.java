@@ -106,18 +106,22 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                     metricsProcessor.getNamespace(), accountName, region));
 
 //            this.awsCloudWatch.setEndpoint(regionEndpointProvider.getEndpoint(region));
-            metricsProcessor.filterUsingTags(tags,region);
-            List<AWSMetric> metrics = metricsProcessor.getMetrics(awsCloudWatch, accountName, awsRequestsCounter);
+
+
+            List<AWSMetric> metrics = metricsProcessor.getMetrics(awsCloudWatch, accountName, awsRequestsCounter); //--> list-metrics call
+
+            List<AWSMetric> filteredMetrics = metricsProcessor.filterUsingTags(metrics, tags, region);
 
             regionMetricStats = new RegionMetricStatistics();
             regionMetricStats.setRegion(region);
 
             if (metrics != null && !metrics.isEmpty()) {
 
+
                 executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(noOfMetricThreadsPerRegion));
                 List<FutureTask<MetricStatistic>> tasks = createConcurrentMetricTasks(
-                        executorService, metrics);
-                collectMetrics(tasks, metrics.size(), regionMetricStats);
+                        executorService, filteredMetrics);
+                collectMetrics(tasks, filteredMetrics.size(), regionMetricStats);
 
             } else {
                 LOGGER.info(String.format(

@@ -22,6 +22,7 @@ import com.appdynamics.extensions.aws.metric.*;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -295,26 +296,63 @@ public class MetricsProcessorHelper {
         return String.format("%s%s", metricPrefix, toAppend);
     }
 
-    public static void filterUsingTags(List<Tag> tags, String nameSpace, String region, List<com.appdynamics.extensions.aws.config.Dimension> dimensions) {
+    public static List<AWSMetric> filterUsingTags(List<AWSMetric> metrics, List<Tag> tags, String dimensionUsedForFiltering, String nameSpace, String resourceType ,
+                                       String region) {
         List<TagFilter> tagFilters = new ArrayList<>();
+        Set<String> resources = Sets.newHashSet();
+        List<AWSMetric> returnList = Lists.newArrayList();
+
         for(Tag tag: tags){
-            tagFilters.add(new TagFilter().withKey(tag.getTagName()).withValues(tag.getTagValue()));
+            tagFilters.add(new TagFilter()
+                    .withKey(tag.getTagName())
+                    .withValues(tag.getTagValue()));
         }
         GetResourcesRequest request = new GetResourcesRequest()
-                .withResourceTypeFilters(nameSpace.split("/")[1].toLowerCase())
-                .withTagFilters(tagFilters);
+                                        .withResourceTypeFilters(resourceType)
+                                        .withTagFilters(tagFilters);
 
-        AWSResourceGroupsTaggingAPI taggingAPIClient = AWSResourceGroupsTaggingAPIClientBuilder.standard().withRegion(region).build();
+        AWSResourceGroupsTaggingAPI taggingAPIClient = AWSResourceGroupsTaggingAPIClientBuilder
+                                                        .standard()
+                                                        .withRegion(region)
+                                                        .build();
 
         GetResourcesResult result = taggingAPIClient.getResources(request);
-
         List<ResourceTagMapping> tagList = result.getResourceTagMappingList();
-        for(ResourceTagMapping arn : tagList){
-            String resource = arn.getResourceARN().split(":")[5];
-            LOGGER.debug("MYTAG" + resource);
 
+        for(ResourceTagMapping arn : tagList){
+            resources.add(extractResourceNameFromARN(nameSpace, resources, arn.getResourceARN()));
         }
 
 
+        for(String resource : resources){
+
+            for (AWSMetric metric : metrics){
+                for (Dimension dimension : metric.getMetric().getDimensions()){
+
+                    if(dimension.getName().equals(dimensionUsedForFiltering) && dimension.getValue().equals(resource)){
+                        LOGGER.debug("ADDING TO LIST"+ resource);
+                        if(!returnList.contains(metric)){
+                            returnList.add(metric);
+                        }
+                    }
+                }
+
+            }
+
+        }
+
+        return returnList;
+
+    }
+
+    private static String extractResourceNameFromARN(String nameSpace, Set<String> resources, String resourceARN) {
+        if(nameSpace.equalsIgnoreCase("AWS/Redshift")){
+            LOGGER.debug("MYTAG" + resourceARN.split(":")[6]); // TODO review the resource name format for all services
+            return (resourceARN.split(":")[6]);
+        }
+        else {
+            LOGGER.debug("MYTAG" + resourceARN.split(":")[5]); // TODO review the resource name format for all services
+            return (resourceARN.split(":")[5]);
+        }
     }
 }
