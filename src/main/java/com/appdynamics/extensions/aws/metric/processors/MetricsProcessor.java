@@ -8,7 +8,7 @@
 package com.appdynamics.extensions.aws.metric.processors;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.appdynamics.extensions.aws.config.Tag;
+import com.appdynamics.extensions.aws.config.Tags;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
 import com.appdynamics.extensions.aws.metric.StatisticType;
@@ -60,5 +60,5 @@ public interface MetricsProcessor {
      */
     String getNamespace();
 
-    List<AWSMetric> filterUsingTags(List<AWSMetric> metrics, List<Tag> tags, String region);
+    List<AWSMetric> filterUsingTags(List<AWSMetric> metrics, List<Tags> tags, String region);
 }

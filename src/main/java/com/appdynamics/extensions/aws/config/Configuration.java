@@ -37,7 +37,7 @@ public class Configuration {
 
     private List<Dimension> dimensions;
 
-    private List<Tag> tag;
+    private List<Tags> tags;
 
 
 
@@ -151,11 +151,11 @@ public class Configuration {
         this.dimensions = dimensions;
     }
 
-    public List<Tag> getTag() {
-        return tag;
+    public List<Tags> getTags() {
+        return tags;
     }
 
-    public void setTag(List<Tag> tag) {
-        this.tag = tag;
+    public void setTags(List<Tags> tags) {
+        this.tags = tags;
     }
 }

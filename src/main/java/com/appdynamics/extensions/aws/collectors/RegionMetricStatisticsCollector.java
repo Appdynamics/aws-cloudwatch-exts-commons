@@ -17,7 +17,7 @@ import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsyncClientBuilder;
 import com.appdynamics.extensions.MonitorExecutorService;
 import com.appdynamics.extensions.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
-import com.appdynamics.extensions.aws.config.Tag;
+import com.appdynamics.extensions.aws.config.Tags;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
@@ -65,7 +65,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
     private int periodInSeconds;
 
-    private List<Tag> tags;
+    private List<Tags> tags;
 
     private RegionMetricStatisticsCollector(Builder builder) {
 
@@ -115,7 +115,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
             regionMetricStats = new RegionMetricStatistics();
             regionMetricStats.setRegion(region);
 
-            if (metrics != null && !metrics.isEmpty()) {
+            if (filteredMetrics != null && !filteredMetrics.isEmpty()) {
 
 
                 executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(noOfMetricThreadsPerRegion));
@@ -235,7 +235,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         private int periodInSeconds;
 
-        private List<Tag> tags;
+        private List<Tags> tags;
 
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
@@ -314,7 +314,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
             return this;
         }
 
-        public Builder withTags(List<Tag> tags){
+        public Builder withTags(List<Tags> tags){
             this.tags = tags;
             return  this;
         }

@@ -7,19 +7,12 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
-import com.amazonaws.services.resourcegroupstaggingapi.AWSResourceGroupsTaggingAPI;
-import com.amazonaws.services.resourcegroupstaggingapi.AWSResourceGroupsTaggingAPIClientBuilder;
-import com.amazonaws.services.resourcegroupstaggingapi.model.GetResourcesRequest;
-import com.amazonaws.services.resourcegroupstaggingapi.model.GetResourcesResult;
-import com.amazonaws.services.resourcegroupstaggingapi.model.ResourceTagMapping;
-import com.amazonaws.services.resourcegroupstaggingapi.model.TagFilter;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
-import com.appdynamics.extensions.aws.config.Tag;
+import com.appdynamics.extensions.aws.config.Tags;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
@@ -74,7 +67,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
     private int periodInSeconds;
 
-    private List<Tag> tags;
+    private List<Tags> tags;
 
     private MetricStatisticCollector(Builder builder) {
 
@@ -287,7 +280,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
         private int periodInSeconds;
 
-        private List<Tag> tags;
+        private List<Tags> tags;
 
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
@@ -338,7 +331,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
             return this;
         }
 
-        public Builder withTags(List<Tag> tags){
+        public Builder withTags(List<Tags> tags){
             this.tags = tags;
             return this;
         }

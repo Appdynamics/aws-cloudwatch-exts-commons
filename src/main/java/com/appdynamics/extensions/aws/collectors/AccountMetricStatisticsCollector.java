@@ -66,7 +66,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
     private int periodInSeconds;
 
-    private List<Tag> tags;
+    private List<Tags> tags;
 
     private AccountMetricStatisticsCollector(Builder builder) {
         this.account = builder.account;
@@ -220,7 +220,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         private LongAdder awsRequestsCounter;
         private String metricPrefix;
         private int periodInSeconds;
-        private List<Tag> tags;
+        private List<Tags> tags;
 
         public Builder withAccount(Account account) {
             this.account = account;
@@ -291,7 +291,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
             return this;
         }
 
-        public Builder withTags(List<Tag> tags){
+        public Builder withTags(List<Tags> tags){
             this.tags = tags;
             return  this;
         }

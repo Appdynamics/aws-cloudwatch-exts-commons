@@ -53,7 +53,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
 
     private String metricPrefix;
 
-    private List<Tag> tags;
+    private List<Tags> tags;
 
     private NamespaceMetricStatisticsCollector(Builder builder) {
         this.accounts = builder.accounts;
@@ -192,7 +192,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
         private CredentialsDecryptionConfig credentialsDecryptionConfig;
         private ProxyConfig proxyConfig;
         private String metricPrefix;
-        private List<Tag> tags;
+        private List<Tags> tags;
 
         public Builder(List<Account> accounts,
                        ConcurrencyConfig concurrencyConfig,
@@ -216,7 +216,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
             return this;
         }
 
-        public Builder withTags(List<Tag> tags){
+        public Builder withTags(List<Tags> tags){
             this.tags = tags;
             return this;
         }
