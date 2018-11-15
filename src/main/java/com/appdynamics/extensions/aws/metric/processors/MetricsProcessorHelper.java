@@ -11,10 +11,7 @@ import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.model.*;
 import com.amazonaws.services.resourcegroupstaggingapi.AWSResourceGroupsTaggingAPI;
 import com.amazonaws.services.resourcegroupstaggingapi.AWSResourceGroupsTaggingAPIClientBuilder;
-import com.amazonaws.services.resourcegroupstaggingapi.model.GetResourcesRequest;
-import com.amazonaws.services.resourcegroupstaggingapi.model.GetResourcesResult;
-import com.amazonaws.services.resourcegroupstaggingapi.model.ResourceTagMapping;
-import com.amazonaws.services.resourcegroupstaggingapi.model.TagFilter;
+import com.amazonaws.services.resourcegroupstaggingapi.model.*;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.Tags;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
@@ -56,14 +53,16 @@ public class MetricsProcessorHelper {
         return filterMetrics(metrics, includeMetrics);
     }
 
-    public static List<AWSMetric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
+    public static List<Metric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
                                                      LongAdder awsRequestsCounter, String namespace, List<IncludeMetric> includeMetrics, Predicate<Metric> metricFilter) {
 
 
         List<Metric> metrics = getMetrics(awsCloudWatch, awsRequestsCounter, namespace);
-        metrics = Lists.newArrayList(Collections2.filter(metrics, metricFilter));
+//        metrics = Lists.newArrayList(Collections2.filter(metrics, metricFilter));
 
-        return filterMetrics(metrics, includeMetrics);
+        //return filterMetrics(metrics, includeMetrics);
+        return metrics;
+
     }
 
 
@@ -296,18 +295,19 @@ public class MetricsProcessorHelper {
         return String.format("%s%s", metricPrefix, toAppend);
     }
 
-    public static List<AWSMetric> filterUsingTags(List<AWSMetric> metrics, List<Tags> tags, String dimensionUsedForFiltering, String nameSpace, String resourceType ,
-                                                  String region) {
-        List<TagFilter> tagFilters = new ArrayList<>();
+    public static List<AWSMetric> filterUsingTags(List<Metric> metrics, List<IncludeMetric> includeMetrics,  List<Tags> tags, String dimensionUsedForFiltering, String nameSpace, String resourceType ,
+                                                  String region, Predicate<Tag> predicate, Predicate<Metric> multiDimensionPredicate) {
+        List<TagFilter> tagFilters = Lists.newArrayList();
         Set<String> resources = Sets.newHashSet();
-        List<AWSMetric> returnList = Lists.newArrayList();
+        List<AWSMetric> awsMetrics = filterMetrics(Lists.newArrayList(Collections2.filter(metrics, multiDimensionPredicate)), includeMetrics);
+
 
         if(tags != null && !tags.isEmpty()) {
             for (Tags tag : tags) {
                 tagFilters.add(new TagFilter()
-                        .withKey(tag.getTagName())
-                        .withValues(tag.getTagValue()));
+                        .withKey(tag.getTagName()));
             }
+
             GetResourcesRequest request = new GetResourcesRequest()
                     .withResourceTypeFilters(resourceType)
                     .withTagFilters(tagFilters);
@@ -317,20 +317,27 @@ public class MetricsProcessorHelper {
                     .withRegion(region)
                     .build();
 
+            List<AWSMetric> returnList = new ArrayList<>();//Lists.newArrayList();
             GetResourcesResult result = taggingAPIClient.getResources(request);
             List<ResourceTagMapping> tagList = result.getResourceTagMappingList();
 
             if(tagList != null && !tagList.isEmpty()){
 
                 for (ResourceTagMapping arn : tagList) {
-                    resources.add(extractResourceNameFromARN(nameSpace, arn.getResourceARN()));
+
+                    List<Tag> tag = arn.getTags();
+                    Collection<Tag> tagApi = Collections2.filter(tag, predicate);
+
+                    if(tagApi.size() > 0 ){
+                        resources.add(extractResourceNameFromARN(nameSpace, arn.getResourceARN()));
+                    }
+
                 }
 
                 for (String resource : resources) {
 
-                    for (AWSMetric metric : metrics) {
+                    for (AWSMetric metric : awsMetrics) {
                         for (Dimension dimension : metric.getMetric().getDimensions()) { //TODO: add more logs for wrong reosurceType of DimensionNameUsedForFiltering
-                            // TODO regex support for tag values
 
                             if (dimension.getName().equals(dimensionUsedForFiltering) && dimension.getValue().equals(resource)) {
                                 LOGGER.debug("Adding to list if resources to be monitored" + resource);
@@ -350,13 +357,14 @@ public class MetricsProcessorHelper {
                 LOGGER.debug("No resources found with the tags specified in config.yml");
             }
 
+
             return returnList;
 
         }
 
         else {
             LOGGER.debug("No tags specified in config.yml"); // return the input list as-is
-            return metrics;
+            return awsMetrics;
 
         }
 
@@ -365,8 +373,8 @@ public class MetricsProcessorHelper {
     private static String extractResourceNameFromARN(String nameSpace, String resourceARN) {
 
 
-        String resource = resourceARN.contains("/") ? resourceARN.substring(resourceARN.lastIndexOf("/")+1, resourceARN.length())
-                : resourceARN.substring(resourceARN.lastIndexOf(":"), resourceARN.length()) ;
+        String resource = resourceARN.contains("/") ? resourceARN.substring(resourceARN.lastIndexOf("/") + 1, resourceARN.length())
+                : resourceARN.substring(resourceARN.lastIndexOf(":") + 1 , resourceARN.length()) ;
 
         LOGGER.debug("Extracting resource name from ARN:"+resource);
         return resource;
