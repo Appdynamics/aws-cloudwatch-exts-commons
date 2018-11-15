@@ -110,18 +110,18 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
             List<AWSMetric> metrics = metricsProcessor.getMetrics(awsCloudWatch, accountName, awsRequestsCounter); //--> list-metrics call
 
-            metrics = metricsProcessor.filterUsingTags(metrics, tags, region);
+            List<AWSMetric> filteredMetrics = metricsProcessor.filterUsingTags(metrics, tags, region);
 
             regionMetricStats = new RegionMetricStatistics();
             regionMetricStats.setRegion(region);
 
-            if (metrics != null && !metrics.isEmpty()) {
+            if (filteredMetrics != null && !filteredMetrics.isEmpty()) {
 
 
                 executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(noOfMetricThreadsPerRegion));
                 List<FutureTask<MetricStatistic>> tasks = createConcurrentMetricTasks(
-                        executorService, metrics);
-                collectMetrics(tasks, metrics.size(), regionMetricStats);
+                        executorService, filteredMetrics);
+                collectMetrics(tasks, filteredMetrics.size(), regionMetricStats);
 
             } else {
                 LOGGER.info(String.format(
