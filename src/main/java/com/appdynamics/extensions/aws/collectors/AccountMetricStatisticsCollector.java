@@ -16,6 +16,7 @@ import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
+import com.appdynamics.extensions.aws.util.AWSUtil;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import org.apache.commons.lang.StringUtils;
@@ -29,7 +30,6 @@ import java.util.concurrent.atomic.LongAdder;
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_MAX_ERROR_RETRY;
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
 import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSClientConfiguration;
-import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSCredentials;
 import static com.appdynamics.extensions.aws.validators.Validator.validateAccount;
 
 /**
@@ -109,7 +109,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
             AWSCredentials awsCredentials = null;
             if (StringUtils.isNotEmpty(account.getAwsAccessKey()) && StringUtils.isNotEmpty(account.getAwsSecretKey())) {
-                awsCredentials = createAWSCredentials(account, credentialsDecryptionConfig);
+                awsCredentials = AWSUtil.createAWSCredentials(account, credentialsDecryptionConfig);
             }
 
             ClientConfiguration awsClientConfig = createAWSClientConfiguration(maxErrorRetrySize, proxyConfig);
@@ -159,7 +159,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
                             .withRateLimiter(rateLimiter)
                             .withAWSRequestCounter(awsRequestsCounter)
                             .withPrefix(metricPrefix)
-                            .withAmazonCloudWatchConfig(awsCredentials, awsClientConfig)
+                            .withAmazonCloudWatchConfig(awsCredentials, awsClientConfig,region)
                             .withTags(tags)
                             .build();
 

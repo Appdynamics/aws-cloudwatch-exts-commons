@@ -8,6 +8,8 @@
 package com.appdynamics.extensions.aws.collectors;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsync;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsyncClientBuilder;
 import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
@@ -266,7 +268,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
         private String region;
 
-        private AmazonCloudWatch awsCloudWatch;
+        private AmazonCloudWatchAsync awsCloudWatch;
 
         private AWSMetric metric;
 
@@ -292,7 +294,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
             return this;
         }
 
-        public Builder withAwsCloudWatch(AmazonCloudWatch awsCloudWatch) {
+        public Builder withAwsCloudWatch(AmazonCloudWatchAsync awsCloudWatch) {
             this.awsCloudWatch = awsCloudWatch;
             return this;
         }

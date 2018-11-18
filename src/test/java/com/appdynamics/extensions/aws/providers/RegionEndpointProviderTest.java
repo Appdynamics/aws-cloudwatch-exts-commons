@@ -7,17 +7,18 @@
 
 package com.appdynamics.extensions.aws.providers;
 
-import static org.junit.Assert.assertNotNull;
-
 import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.Assert.assertNotNull;
+
 public class RegionEndpointProviderTest {
 
     private RegionEndpointProvider classUnderTest = RegionEndpointProvider.getInstance();
 
+    //todo:remove
     @Test
     public void testLoadFromMap() {
 

@@ -8,7 +8,7 @@
 package com.appdynamics.extensions.aws.collectors;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsync;
 import com.amazonaws.services.cloudwatch.model.*;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.LongAdder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MetricStatisticsCollectorTest {
@@ -50,7 +50,7 @@ public class MetricStatisticsCollectorTest {
     private Metric mockMetric;
 
     @Mock
-    private AmazonCloudWatch mockAwsCloudWatch;
+    private AmazonCloudWatchAsync mockAwsCloudWatchAsync;
 
     @Mock
     private GetMetricStatisticsResult mockGetMetricStatsResult;
@@ -60,8 +60,7 @@ public class MetricStatisticsCollectorTest {
 
     private LongAdder requestCounter = new LongAdder();
 
-    @Mock
-    private int periodInSeconds;
+
 
     @Before
     public void setup() {
@@ -78,7 +77,7 @@ public class MetricStatisticsCollectorTest {
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(invalidTimeRange)
-                .withPeriod(periodInSeconds)
+                .withPeriod(60)
                 .withMetric(mockAWSMetric)
                 .withAWSRequestCounter(requestCounter)
                 .build();
@@ -88,14 +87,14 @@ public class MetricStatisticsCollectorTest {
 
     @Test(expected = AwsException.class)
     public void testAwsCloudwatchThrowsException() throws Exception {
-        when(mockAwsCloudWatch.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
+        when(mockAwsCloudWatchAsync.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
                 .thenThrow(new AmazonServiceException("test exception"));
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(new MetricsTimeRange())
-                .withPeriod(periodInSeconds)
+                .withPeriod(60)
                 .withMetric(mockAWSMetric)
-                .withAwsCloudWatch(mockAwsCloudWatch)
+                .withAwsCloudWatch(mockAwsCloudWatchAsync)
                 .withAWSRequestCounter(requestCounter)
                 .build();
 
@@ -116,16 +115,16 @@ public class MetricStatisticsCollectorTest {
         List<Datapoint> testDatapoints = Lists.newArrayList(latestDatapoint,
                 fiveMinsAgoDatapoint, tenMinsAgoDatapoint);
 
-        when(mockAwsCloudWatch.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
+        when(mockAwsCloudWatchAsync.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
                 .thenReturn(mockGetMetricStatsResult);
 
         when(mockGetMetricStatsResult.getDatapoints()).thenReturn(testDatapoints);
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(new MetricsTimeRange())
-                .withPeriod(periodInSeconds)
+                .withPeriod(60)
                 .withMetric(mockAWSMetric)
-                .withAwsCloudWatch(mockAwsCloudWatch)
+                .withAwsCloudWatch(mockAwsCloudWatchAsync)
                 .withStatType(StatisticType.SUM)
                 .withAWSRequestCounter(requestCounter)
                 .build();
@@ -140,16 +139,16 @@ public class MetricStatisticsCollectorTest {
     public void testNullDatapoint() throws Exception {
         List<Datapoint> testDatapoints = Lists.newArrayList(null, null);
 
-        when(mockAwsCloudWatch.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
+        when(mockAwsCloudWatchAsync.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
                 .thenReturn(mockGetMetricStatsResult);
 
         when(mockGetMetricStatsResult.getDatapoints()).thenReturn(testDatapoints);
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(new MetricsTimeRange())
-                .withPeriod(periodInSeconds)
+                .withPeriod(60)
                 .withMetric(mockAWSMetric)
-                .withAwsCloudWatch(mockAwsCloudWatch)
+                .withAwsCloudWatch(mockAwsCloudWatchAsync)
                 .withStatType(StatisticType.SUM)
                 .withAWSRequestCounter(requestCounter)
                 .build();
@@ -176,7 +175,7 @@ public class MetricStatisticsCollectorTest {
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(timeRange)
-                .withPeriod(periodInSeconds)
+                .withPeriod(60)
                 .withMetric(mockAWSMetric)
                 .withAWSRequestCounter(requestCounter)
                 .build();
@@ -198,7 +197,7 @@ public class MetricStatisticsCollectorTest {
 
         return field;
     }
-
+//
     private Datapoint createTestDatapoint(Date timestamp) {
         Random random = new Random();
 
