@@ -14,6 +14,7 @@ import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsync;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsyncClientBuilder;
+import com.amazonaws.services.cloudwatch.model.Metric;
 import com.appdynamics.extensions.MonitorExecutorService;
 import com.appdynamics.extensions.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
@@ -108,7 +109,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 //            this.awsCloudWatch.setEndpoint(regionEndpointProvider.getEndpoint(region));
 
 
-            List<AWSMetric> metrics = metricsProcessor.getMetrics(awsCloudWatch, accountName, awsRequestsCounter); //--> list-metrics call
+            List<Metric> metrics = metricsProcessor.getMetrics(awsCloudWatch, accountName, awsRequestsCounter); //--> list-metrics call
 
             List<AWSMetric> filteredMetrics = metricsProcessor.filterUsingTags(metrics, tags, region);
 

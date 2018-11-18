@@ -33,7 +33,7 @@ public interface MetricsProcessor {
      * @param awsRequestsCounter a requests counter which counts the number of requests
      * @return list of metrics
      */
-    List<AWSMetric> getMetrics(AmazonCloudWatch awsCloudWatch, String accountName, LongAdder awsRequestsCounter);
+    List<com.amazonaws.services.cloudwatch.model.Metric> getMetrics(AmazonCloudWatch awsCloudWatch, String accountName, LongAdder awsRequestsCounter);
 
     /**
      * Returns the statistic type of the specified metric
@@ -60,5 +60,5 @@ public interface MetricsProcessor {
      */
     String getNamespace();
 
-    List<AWSMetric> filterUsingTags(List<AWSMetric> metrics, List<Tags> tags, String region);
+    List<AWSMetric> filterUsingTags(List<com.amazonaws.services.cloudwatch.model.Metric> metrics, List<Tags> tags, String region);
 }

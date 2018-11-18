@@ -253,7 +253,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
     }
 
     private void setPeriodInSeconds (int periodInSeconds){
-        this.periodInSeconds = periodInSeconds < 0 ? DEFAULT_METRIC_PERIOD_IN_SEC : periodInSeconds;
+        this.periodInSeconds = ( periodInSeconds <= 0 )? DEFAULT_METRIC_PERIOD_IN_SEC : periodInSeconds;
     }
 
     /**

@@ -58,6 +58,7 @@ public class TagsPredicate implements com.google.common.base.Predicate<Tag> {
 //                        allPredicates.put(dimensionName, patternPredicate);
 
 //                    allPredicates.put(dimensionName, patternPredicate);
+                    //todo: check edge cases for [] tag value
                 }
                 LOGGER.warn("Empty tag Value for {}");
             }
