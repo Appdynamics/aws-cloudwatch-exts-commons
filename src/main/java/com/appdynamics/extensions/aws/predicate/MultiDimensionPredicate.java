@@ -38,7 +38,7 @@ public class MultiDimensionPredicate implements Predicate<Metric> {
                 String dimensionName = dimension.getName();
                 Set<String> dimensionValues = dimension.getValues();
 
-                if(dimensionValues.size() > 0) {
+                if(dimensionValues != null && dimensionValues.size() > 0) {
 
                         for (String pattern : dimensionValues) {
                             if (!pattern.equals("")) {

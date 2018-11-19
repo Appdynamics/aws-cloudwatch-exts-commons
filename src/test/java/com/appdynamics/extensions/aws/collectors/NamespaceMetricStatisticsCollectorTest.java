@@ -7,10 +7,7 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import com.appdynamics.extensions.aws.config.Account;
-import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
-import com.appdynamics.extensions.aws.config.IncludeMetric;
-import com.appdynamics.extensions.aws.config.MetricsConfig;
+import com.appdynamics.extensions.aws.config.*;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
@@ -18,6 +15,7 @@ import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.RateLimiter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -31,9 +29,13 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.atomic.LongAdder;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.*;
+import static org.powermock.api.mockito.PowerMockito.when;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({NamespaceMetricStatisticsCollector.class,
@@ -58,6 +60,38 @@ public class NamespaceMetricStatisticsCollectorTest {
         List<Account> testAccounts = getTestAccounts();
 
         when(mockMetricsProcessor.getNamespace()).thenReturn("TestNamespace");
+
+        AccountMetricStatisticsCollector mockAccountStatsCollector1 = mock(AccountMetricStatisticsCollector.class);
+        AccountMetricStatistics accountStats1 = createTestAccountMetricStatistics(testAccounts.get(0).getDisplayAccountName());
+        when(mockAccountStatsCollector1.call()).thenReturn(accountStats1);
+
+//        AccountMetricStatisticsCollector mockAccountStatsCollector2 = mock(AccountMetricStatisticsCollector.class);
+//        AccountMetricStatistics accountStats2 = createTestAccountMetricStatistics(testAccounts.get(1).getDisplayAccountName());
+//        when(mockAccountStatsCollector2.call()).thenReturn(accountStats2);
+
+        // simulate account stats collector creation
+        AccountMetricStatisticsCollector.Builder mockBuilder = mock(AccountMetricStatisticsCollector.Builder.class);
+
+        whenNew(AccountMetricStatisticsCollector.Builder.class).withNoArguments().thenReturn(mockBuilder);
+
+        when(mockBuilder.withAccount(any(Account.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withMaxErrorRetrySize(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withMetricsProcessor(any(MetricsProcessor.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withNoOfMetricThreadsPerRegion(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withNoOfRegionThreadsPerAccount(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withThreadTimeOut(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withTags(anyList())).thenReturn(mockBuilder);
+        when(mockBuilder.withPeriod(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withThreadTimeOut(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withCredentialsDecryptionConfig(any(CredentialsDecryptionConfig.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withProxyConfig(any(ProxyConfig.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withRateLimiter(any(RateLimiter.class))).thenReturn(mockBuilder);
+
+        when(mockBuilder.withAWSRequestCounter(any(LongAdder.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withPrefix(anyString())).thenReturn(mockBuilder);
+
+        when(mockBuilder.build()).thenReturn(mockAccountStatsCollector1);
         when(mockMetricsConfig.getGetMetricStatisticsRateLimit()).thenReturn(400);
         ArgumentCaptor<NamespaceMetricStatistics> argumentCaptor =
                 ArgumentCaptor.forClass(NamespaceMetricStatistics.class);
@@ -81,7 +115,7 @@ public class NamespaceMetricStatisticsCollectorTest {
         NamespaceMetricStatistics result = argumentCaptor.getValue();
 
         verify(mockMetricsProcessor).createMetricStatsMapForUpload(isA(NamespaceMetricStatistics.class));
-//        assertEquals(accountStats1, result.getAccountMetricStatisticsList().get(0));
+        assertEquals(accountStats1, result.getAccountMetricStatisticsList().get(0));
 //        assertEquals(accountStats2, result.getAccountMetricStatisticsList().get(1));
     }
 
