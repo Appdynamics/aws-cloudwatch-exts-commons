@@ -63,6 +63,7 @@ public class AccountMetricStatisticsCollectorTest {
 
         testAccount.setAwsAccessKey("testAccessKey");
         testAccount.setAwsSecretKey("testAwsSecretKey");
+
         when(mockMetricsProcessor.getNamespace()).thenReturn("testNamespace");
         testAccount.setDisplayAccountName("TestAccount");
         Set<String> testRegions = Sets.newHashSet("us-west-1", "us-west-2");
