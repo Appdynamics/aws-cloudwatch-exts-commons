@@ -20,24 +20,20 @@ public class TagsPredicate implements com.google.common.base.Predicate<Tag> {
     private Map<String, Predicate<CharSequence>> allPredicates = new HashMap<>();
     private List<Tags> tags;
 
-    public TagsPredicate(List<Tags> tags) {
+    public TagsPredicate (List<Tags> tags) {
         this.tags = tags;
         build();
     }
 
-    private void build() {
+    private void build () {
         if (tags != null && !tags.isEmpty()) {
             Predicate<CharSequence> patternPredicate = null;
-
             for (Tags tag : tags) {
                 String tagName = tag.getTagName();
                 Set<String> tagValues = tag.getTagValue();
-
-                if(tagValues.size() > 0) {
-
+                if (tagValues.size() > 0) {
                     for (String pattern : tagValues) {
                         if (!pattern.equals("")) {
-
                             Predicate<CharSequence> charSequencePredicate = Predicates.containsPattern(pattern);
                             if (patternPredicate == null) {
                                 patternPredicate = charSequencePredicate;
@@ -45,18 +41,13 @@ public class TagsPredicate implements com.google.common.base.Predicate<Tag> {
                                 patternPredicate = Predicates.or(patternPredicate, charSequencePredicate);
                             }
                             allPredicates.put(tagName, patternPredicate);
-
-                        }
-
-                        else {
+                        } else {
                             LOGGER.warn(" tag Value for tag {} is blank. Not collecting metrics that require " +
                                     "this tag");
                         }
-
 //                            allPredicates.put(dimensionName, patternPredicate); - didnt work
                     }
 //                        allPredicates.put(dimensionName, patternPredicate);
-
 //                    allPredicates.put(dimensionName, patternPredicate);
                     //todo: check edge cases for [] tag value
                 }
@@ -67,34 +58,19 @@ public class TagsPredicate implements com.google.common.base.Predicate<Tag> {
         }
     }
 
-
-
-
     @Override
-    public boolean apply(Tag tag) {
+    public boolean apply (Tag tag) { //tag is aws metric tag
+        boolean result = false;
+        String tagName = tag.getKey();
+        String tagValue = tag.getValue();
+        Predicate<CharSequence> predicate = allPredicates.get(tagName);
 
-
-                boolean result = false;
-                String tagName = tag.getKey();
-                String tagValue = tag.getValue();
-
-                Predicate<CharSequence> predicate = allPredicates.get(tagName);
-                if (predicate != null) {
-                    result = predicate.apply(tagValue);
-                }
-
-                if (predicate == null || !result) {
-                    return false;
-                }
-
-
-
-
+        if (predicate != null) {
+            result = predicate.apply(tagValue);
+        }
+        if (predicate == null || !result) {
+            return false;
+        }
         return true;
-
     }
-
-
-
-
 }
