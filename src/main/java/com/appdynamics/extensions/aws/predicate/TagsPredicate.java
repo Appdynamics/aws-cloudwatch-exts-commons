@@ -31,6 +31,7 @@ public class TagsPredicate implements com.google.common.base.Predicate<Tag> {
             for (Tags tag : tags) {
                 String tagName = tag.getTagName();
                 Set<String> tagValues = tag.getTagValue();
+
                 if (tagValues.size() > 0) {
                     for (String pattern : tagValues) {
                         if (!pattern.equals("")) {
@@ -42,16 +43,13 @@ public class TagsPredicate implements com.google.common.base.Predicate<Tag> {
                             }
                             allPredicates.put(tagName, patternPredicate);
                         } else {
-                            LOGGER.warn(" tag Value for tag {} is blank. Not collecting metrics that require " +
-                                    "this tag");
+                            LOGGER.warn("Tag Value for tagName"+tagName+" is blank. Not collecting metrics that require this tag");
                         }
-//                            allPredicates.put(dimensionName, patternPredicate); - didnt work
                     }
-//                        allPredicates.put(dimensionName, patternPredicate);
-//                    allPredicates.put(dimensionName, patternPredicate);
-                    //todo: check edge cases for [] tag value
                 }
-                LOGGER.warn("Empty tag Value for {}");
+                else {
+                    LOGGER.warn("Empty tagValue specified for"+tagName);
+                }
             }
         } else {
             LOGGER.warn("tags in config.yml not configured, hence not monitoring anything");
@@ -68,9 +66,6 @@ public class TagsPredicate implements com.google.common.base.Predicate<Tag> {
         if (predicate != null) {
             result = predicate.apply(tagValue);
         }
-        if (predicate == null || !result) {
-            return false;
-        }
-        return true;
+        return (!(predicate == null || !result));
     }
 }

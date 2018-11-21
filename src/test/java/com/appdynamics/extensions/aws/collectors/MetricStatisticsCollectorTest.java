@@ -23,6 +23,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.Date;
@@ -36,6 +38,7 @@ import static org.mockito.Matchers.any;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
+@PrepareForTest({LoggerFactory.class, MetricStatisticCollector.class})
 public class MetricStatisticsCollectorTest {
 
     private MetricStatisticCollector classUnderTest;
@@ -60,13 +63,10 @@ public class MetricStatisticsCollectorTest {
 
     private LongAdder requestCounter = new LongAdder();
 
-
-
     @Before
     public void setup() {
         when(mockAWSMetric.getIncludeMetric()).thenReturn(mockIncludeMetric);
         when(mockAWSMetric.getMetric()).thenReturn(mockMetric);
-
     }
 
     @Test(expected = AwsException.class)
@@ -136,6 +136,26 @@ public class MetricStatisticsCollectorTest {
     }
 
     @Test
+    public void whenDataPointsExceed1440ThenReturnNullMetric() throws Exception{
+        MetricsTimeRange mockMetricsTimeRange = new MetricsTimeRange();
+        mockMetricsTimeRange.setStartTimeInMinsBeforeNow(2880);
+        mockMetricsTimeRange.setEndTimeInMinsBeforeNow(0);
+
+        classUnderTest = new MetricStatisticCollector.Builder()
+                .withMetricsTimeRange(mockMetricsTimeRange)
+                .withPeriod(60)
+                .withMetric(mockAWSMetric)
+                .withAwsCloudWatch(mockAwsCloudWatchAsync)
+                .withStatType(StatisticType.AVE)
+                .withAWSRequestCounter(requestCounter)
+                .build();
+
+        MetricStatistic result = classUnderTest.call();
+        assertNull(result.getValue());
+
+    }
+
+    @Test
     public void testNullDatapoint() throws Exception {
         List<Datapoint> testDatapoints = Lists.newArrayList(null, null);
 
@@ -197,7 +217,7 @@ public class MetricStatisticsCollectorTest {
 
         return field;
     }
-//
+
     private Datapoint createTestDatapoint(Date timestamp) {
         Random random = new Random();
 

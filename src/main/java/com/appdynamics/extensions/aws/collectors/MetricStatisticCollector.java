@@ -9,12 +9,10 @@ package com.appdynamics.extensions.aws.collectors;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsync;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsyncClientBuilder;
 import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
-import com.appdynamics.extensions.aws.config.Tags;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
@@ -32,6 +30,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 import static com.appdynamics.extensions.aws.Constants.*;
 import static com.appdynamics.extensions.aws.validators.Validator.validateTimeRange;
+import static java.lang.Math.abs;
 
 /**
  * Retrieves statistics for the specified metric.
@@ -40,8 +39,8 @@ import static com.appdynamics.extensions.aws.validators.Validator.validateTimeRa
  * The maximum number of data points that can be queried is 50,850,
  * whereas the maximum number of data points returned from a single
  * GetMetricStatistics request is 1,440.
- * <p>
- * <p>see {@link http://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_GetMetricStatistics.html}
+ *
+ * @see <a href="http://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_GetMetricStatistics.html">API_GetMetricStatistics</a>
  *
  * @author Florencio Sarmiento
  */
@@ -69,8 +68,6 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
     private int periodInSeconds;
 
-    private List<Tags> tags;
-
     private MetricStatisticCollector(Builder builder) {
 
         this.accountName = builder.accountName;
@@ -80,7 +77,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         this.statType = builder.statType;
         this.awsRequestsCounter = builder.awsRequestsCounter;
         this.metricPrefix = builder.metricPrefix;
-        this.tags = builder.tags;
+
 
         //Check if time ranges are specified locally for a metric. If not use the global time ranges.
         MetricsTimeRange metricsTimeRangeLocal = metric.getIncludeMetric().getMetricsTimeRange();
@@ -118,6 +115,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
     public MetricStatistic call() throws Exception {
         MetricStatistic metricStatistic = null;
 
+        Logger LOGGER = returnLogger();
         try {
             validateTimeRange(startTimeInMinsBeforeNow, endTimeInMinsBeforeNow);
 
@@ -133,16 +131,27 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
             metricStatistic.setMetricPrefix(metricPrefix);
 
             GetMetricStatisticsRequest request = createGetMetricStatisticsRequest();
-            GetMetricStatisticsResult result = awsCloudWatch.getMetricStatistics(request);
-            awsRequestsCounter.increment();
 
-            Datapoint latestDatapoint = getLatestDatapoint(result.getDatapoints());
+            int timeRangeInSeconds = abs(startTimeInMinsBeforeNow - endTimeInMinsBeforeNow ) * 60;
+            int numberOfDataPoints = timeRangeInSeconds / periodInSeconds ;
 
-            if (latestDatapoint != null) {
-                Double value = getValue(latestDatapoint);
-                metricStatistic.setValue(value);
-                metricStatistic.setUnit(latestDatapoint.getUnit());
+
+            if(numberOfDataPoints <= 1440) {
+                GetMetricStatisticsResult result = awsCloudWatch.getMetricStatistics(request);
+                awsRequestsCounter.increment();
+                Datapoint latestDatapoint = getLatestDatapoint(result.getDatapoints());
+                if (latestDatapoint != null) {
+                    Double value = getValue(latestDatapoint);
+                    metricStatistic.setValue(value);
+                    metricStatistic.setUnit(latestDatapoint.getUnit());
+                }
             }
+            else {
+                LOGGER.debug("This may return upto "+numberOfDataPoints +" datapoints which exceeds the limit of 1440. " +
+                        "Not fetching metric from AWS. Please decrease the time range or increase periodInSeconfd in config.yml");
+            }
+
+
 
         } catch (Exception e) {
             throw new AwsException(String.format(
@@ -153,6 +162,11 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         }
 
         return metricStatistic;
+    }
+
+
+     Logger returnLogger(){
+        return Logger.getLogger(MetricStatisticCollector.class);
     }
 
     private GetMetricStatisticsRequest createGetMetricStatisticsRequest() {
@@ -282,8 +296,6 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
         private int periodInSeconds;
 
-        private List<Tags> tags;
-
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
             return this;
@@ -330,11 +342,6 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
         public Builder withPeriod(int periodInSeconds) {
             this.periodInSeconds = periodInSeconds;
-            return this;
-        }
-
-        public Builder withTags(List<Tags> tags){
-            this.tags = tags;
             return this;
         }
 

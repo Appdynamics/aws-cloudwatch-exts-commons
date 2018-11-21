@@ -155,7 +155,6 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                             .withStatType(metricsProcessor.getStatisticType(metric))
                             .withAWSRequestCounter(awsRequestsCounter)
                             .withPrefix(metricPrefix)
-                            .withTags(tags)
                             .build();
 
             FutureTask<MetricStatistic> accountTaskExecutor = new FutureTask<MetricStatistic>(metricTask);
@@ -212,9 +211,6 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         private MetricsTimeRange metricsTimeRange;
 
-       // private AmazonCloudWatch awsCloudWatch;
-       // private AmazonCloudWatchClientBuilder amazonCloudWatchClientBuilder =  AmazonCloudWatchClientBuilder.standard();
-
         private AmazonCloudWatchAsync amazonCloudWatchClient;
 
         private RateLimiter rateLimiter;
@@ -256,14 +252,12 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                                                   ClientConfiguration awsClientConfig, String region) {
             if (awsCredentials == null) {
                 LOGGER.info("Credentials not provided trying to use instance profile");
-               // this.awsCloudWatch = new AmazonCloudWatchClient(new InstanceProfileCredentialsProvider(), awsClientConfig);
                 this.amazonCloudWatchClient =   AmazonCloudWatchAsyncClientBuilder.standard()
                                                 .withCredentials(new InstanceProfileCredentialsProvider(true).getInstance())
                                                 .withClientConfiguration(awsClientConfig)
                                                 .withRegion(region)
                                                 .build();
             } else {
-               // this.awsCloudWatch = new AmazonCloudWatchClient(awsCredentials, awsClientConfig);
                 LOGGER.debug("Creating client for "+region);
                 this.amazonCloudWatchClient = AmazonCloudWatchAsyncClientBuilder.standard()
                                                 .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
@@ -272,11 +266,6 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                                                 .withClientConfiguration(awsClientConfig)
                                                 .build();
             }
-            return this;
-        }
-
-        public Builder setAmazonCloudWatchConfig(AmazonCloudWatchAsync amazonCloudWatchClient){
-            this.amazonCloudWatchClient = amazonCloudWatchClient;
             return this;
         }
 
