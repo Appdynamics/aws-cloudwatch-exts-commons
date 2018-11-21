@@ -7,8 +7,6 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsync;
 import com.amazonaws.services.cloudwatch.model.*;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
@@ -38,9 +36,7 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.*;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({RegionEndpointProvider.class,
@@ -56,17 +52,9 @@ public class RegionMetricStatisticsCollectorTest {
     private AmazonCloudWatchAsync mockAwsCloudWatchAsync;
 
     @Mock
-    private AWSCredentials mockAWSCredentials;
-
-    @Mock
-    private ClientConfiguration mockAwsClientConfig;
-
-    @Mock
     private MetricsProcessor mockMetricsProcessor;
 
     private LongAdder requestsCounter = new LongAdder();
-
-
 
     @Test
     public void testNoMetricsToProcessReturnsEmptyStats() throws Exception {
@@ -116,7 +104,6 @@ public class RegionMetricStatisticsCollectorTest {
         // simulate creation of metric stats collector
         MetricStatisticCollector.Builder mockBuilder = mock(MetricStatisticCollector.Builder.class);
         whenNew(MetricStatisticCollector.Builder.class).withNoArguments().thenReturn(mockBuilder);
-        when(mockBuilder.withTags(anyList())).thenReturn(mockBuilder);
         when(mockBuilder.withPeriod(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withAccountName(anyString())).thenReturn(mockBuilder);
         when(mockBuilder.withAwsCloudWatch(mockAwsCloudWatchAsync)).thenReturn(mockBuilder);
@@ -190,7 +177,6 @@ public class RegionMetricStatisticsCollectorTest {
         // simulate creation of metric stats collector
         MetricStatisticCollector.Builder mockBuilder = mock(MetricStatisticCollector.Builder.class);
         whenNew(MetricStatisticCollector.Builder.class).withNoArguments().thenReturn(mockBuilder);
-        when(mockBuilder.withTags(anyList())).thenReturn(mockBuilder);
         when(mockBuilder.withPeriod(anyInt())).thenReturn(mockBuilder);
         when(mockBuilder.withAccountName(anyString())).thenReturn(mockBuilder);
         when(mockBuilder.withAwsCloudWatch(mockAwsCloudWatchAsync)).thenReturn(mockBuilder);
@@ -266,7 +252,7 @@ public class RegionMetricStatisticsCollectorTest {
 
         return testMetrics;
     }
-//
+
     private List<AWSMetric> getTestAdditionalMetrics() {
         List<AWSMetric> testMetrics = Lists.newArrayList();
 
@@ -294,7 +280,7 @@ public class RegionMetricStatisticsCollectorTest {
 
         return testMetrics;
     }
-//
+
     private MetricStatistic createTestMetricStatistics(AWSMetric metric) {
         MetricStatistic metricStatistic = new MetricStatistic();
         metricStatistic.setMetric(metric);

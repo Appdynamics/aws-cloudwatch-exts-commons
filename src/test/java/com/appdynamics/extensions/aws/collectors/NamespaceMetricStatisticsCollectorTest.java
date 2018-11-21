@@ -41,6 +41,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @PrepareForTest({NamespaceMetricStatisticsCollector.class,
         ExecutorCompletionService.class})
 @PowerMockIgnore({"org.apache.*, javax.xml.*","javax.net.ssl.*"})
+
 public class NamespaceMetricStatisticsCollectorTest {
 
     private NamespaceMetricStatisticsCollector classUnderTest;
@@ -50,9 +51,6 @@ public class NamespaceMetricStatisticsCollectorTest {
 
     @Mock
     private MetricsConfig mockMetricsConfig;
-
-//    @Mock
-//    private ConcurrencyConfig mockConcurrencyConfig;
 
     @SuppressWarnings("unchecked")
     @Test
@@ -64,10 +62,6 @@ public class NamespaceMetricStatisticsCollectorTest {
         AccountMetricStatisticsCollector mockAccountStatsCollector1 = mock(AccountMetricStatisticsCollector.class);
         AccountMetricStatistics accountStats1 = createTestAccountMetricStatistics(testAccounts.get(0).getDisplayAccountName());
         when(mockAccountStatsCollector1.call()).thenReturn(accountStats1);
-
-//        AccountMetricStatisticsCollector mockAccountStatsCollector2 = mock(AccountMetricStatisticsCollector.class);
-//        AccountMetricStatistics accountStats2 = createTestAccountMetricStatistics(testAccounts.get(1).getDisplayAccountName());
-//        when(mockAccountStatsCollector2.call()).thenReturn(accountStats2);
 
         // simulate account stats collector creation
         AccountMetricStatisticsCollector.Builder mockBuilder = mock(AccountMetricStatisticsCollector.Builder.class);
@@ -116,7 +110,6 @@ public class NamespaceMetricStatisticsCollectorTest {
 
         verify(mockMetricsProcessor).createMetricStatsMapForUpload(isA(NamespaceMetricStatistics.class));
         assertEquals(accountStats1, result.getAccountMetricStatisticsList().get(0));
-//        assertEquals(accountStats2, result.getAccountMetricStatisticsList().get(1));
     }
 
     private List<Account> getTestAccounts() {
@@ -162,10 +155,8 @@ public class NamespaceMetricStatisticsCollectorTest {
 
                 regionStats.addMetricStatistic(metricStatistic);
             }
-
             accountStats.add(regionStats);
         }
-
         return accountStats;
     }
 

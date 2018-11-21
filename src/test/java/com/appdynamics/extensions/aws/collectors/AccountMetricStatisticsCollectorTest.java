@@ -9,7 +9,6 @@ package com.appdynamics.extensions.aws.collectors;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchAsync;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.Metric;
 import com.appdynamics.extensions.aws.config.Account;
@@ -39,9 +38,7 @@ import java.util.concurrent.atomic.LongAdder;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.*;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.powermock.api.mockito.PowerMockito.*;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({AccountMetricStatisticsCollector.class,
@@ -51,8 +48,6 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 public class AccountMetricStatisticsCollectorTest {
 
     private AccountMetricStatisticsCollector classUnderTest;
-    @Mock
-    private AmazonCloudWatchAsync mockAwsCloudWatchAsync;
 
     @Mock
     private MetricsProcessor mockMetricsProcessor;

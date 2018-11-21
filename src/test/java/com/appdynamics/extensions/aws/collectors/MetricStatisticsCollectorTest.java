@@ -39,6 +39,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 @PrepareForTest({LoggerFactory.class, MetricStatisticCollector.class})
+
 public class MetricStatisticsCollectorTest {
 
     private MetricStatisticCollector classUnderTest;
