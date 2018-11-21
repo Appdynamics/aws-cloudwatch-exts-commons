@@ -43,16 +43,16 @@ public class TagsPredicate implements com.google.common.base.Predicate<Tag> {
                             }
                             allPredicates.put(tagName, patternPredicate);
                         } else {
-                            LOGGER.warn("Tag Value for tagName"+tagName+" is blank. Not collecting metrics that require this tag");
+                            LOGGER.warn("Tag Value for tagName "+tagName+" is \"\" in config.yml. Hence not monitoring anything");
                         }
                     }
                 }
                 else {
-                    LOGGER.warn("Empty tagValue specified for"+tagName);
+                    LOGGER.warn("TagValue specified for "+tagName+ " in config.yml is []. Hence not monitoring anything");
                 }
             }
         } else {
-            LOGGER.warn("tags in config.yml not configured, hence not monitoring anything");
+            LOGGER.warn("No tags are configured in config.yml");
         }
     }
 

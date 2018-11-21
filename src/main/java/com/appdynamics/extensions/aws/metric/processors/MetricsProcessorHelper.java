@@ -296,7 +296,7 @@ public class MetricsProcessorHelper {
         List<Metric> filteredList = Lists.newArrayList();
         List<Metric> tagFilteredMetricList = Lists.newArrayList();
 
-        if(tags == null || tags.isEmpty()){
+        if(tags == null || tags.isEmpty()){ //tag filtering disabled
             LOGGER.debug("No tags specified in config.yml"); // return the input list as-is
             listMetricsResult = Lists.newArrayList(Collections2.filter(listMetricsResult, metricPredicate));
             return filterMetrics(listMetricsResult, includeMetrics);
