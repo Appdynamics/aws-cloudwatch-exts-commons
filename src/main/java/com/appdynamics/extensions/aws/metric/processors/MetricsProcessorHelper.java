@@ -16,6 +16,7 @@ import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.Tags;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.metric.*;
+import com.appdynamics.extensions.aws.predicate.TagsPredicate;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
@@ -288,17 +289,17 @@ public class MetricsProcessorHelper {
                                                   String dimensionUsedForFiltering,
                                                   String resourceType,
                                                   String region,
-                                                  Predicate<Tag> tagPredicate,
-                                                  Predicate<Metric> metricPredicate,
+                                                  Predicate<Metric> dimensionPredicate,
                                                   List<IncludeMetric> includeMetrics) {
         List<TagFilter> tagFilters;
         Set<String> resources;
         List<Metric> filteredList = Lists.newArrayList();
         List<Metric> tagFilteredMetricList = Lists.newArrayList();
+        TagsPredicate tagPredicate = new TagsPredicate(tags);
 
         if(tags == null || tags.isEmpty()){ //tag filtering disabled
             LOGGER.debug("No tags specified in config.yml"); // return the input list as-is
-            listMetricsResult = Lists.newArrayList(Collections2.filter(listMetricsResult, metricPredicate));
+            listMetricsResult = Lists.newArrayList(Collections2.filter(listMetricsResult, dimensionPredicate));
             return filterMetrics(listMetricsResult, includeMetrics);
         }
         else {
@@ -317,7 +318,7 @@ public class MetricsProcessorHelper {
             else {
                 LOGGER.warn("Tag names in config.yml are empty");
             }
-            listMetricsResult = Lists.newArrayList(Collections2.filter(filteredList, metricPredicate));
+            listMetricsResult = Lists.newArrayList(Collections2.filter(filteredList, dimensionPredicate));
             return filterMetrics(listMetricsResult, includeMetrics);
         }
     }
@@ -355,13 +356,13 @@ public class MetricsProcessorHelper {
     }
 
     private static GetResourcesResult getResources (String resourceType, String region, List<TagFilter> tagFilters) {
-        GetResourcesRequest request = new GetResourcesRequest().withResourceTypeFilters(resourceType)
-                                                        .withTagFilters(tagFilters);
+        GetResourcesRequest request = new GetResourcesRequest().withTagFilters(tagFilters)
+                .withResourceTypeFilters(resourceType);
         AWSResourceGroupsTaggingAPI taggingAPIClient = AWSResourceGroupsTaggingAPIClientBuilder
-                                                        .standard()
-                                                        .withRegion(region)
-                                                        .build();
-        return taggingAPIClient.getResources(request);
+                                                        .standard().withRegion(region).build();
+
+        GetResourcesResult result =  taggingAPIClient.getResources(request);
+        return result;
     }
 
     private static List<TagFilter> createTagFilters (List<Tags> tags) {

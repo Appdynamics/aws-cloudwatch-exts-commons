@@ -7,27 +7,39 @@
 
 package com.appdynamics.extensions.aws.metric.processors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.Metric;
+import com.amazonaws.services.resourcegroupstaggingapi.AWSResourceGroupsTaggingAPI;
+import com.amazonaws.services.resourcegroupstaggingapi.AWSResourceGroupsTaggingAPIClientBuilder;
+import com.amazonaws.services.resourcegroupstaggingapi.model.GetResourcesRequest;
+import com.amazonaws.services.resourcegroupstaggingapi.model.GetResourcesResult;
+import com.amazonaws.services.resourcegroupstaggingapi.model.ResourceTagMapping;
+import com.amazonaws.services.resourcegroupstaggingapi.model.Tag;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
+import com.appdynamics.extensions.aws.config.Tags;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
-import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
-import com.appdynamics.extensions.aws.metric.MetricStatistic;
-import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
-import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
-import com.appdynamics.extensions.aws.metric.StatisticType;
+import com.appdynamics.extensions.aws.metric.*;
+import com.appdynamics.extensions.aws.predicate.MultiDimensionPredicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.powermock.api.mockito.PowerMockito.*;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({GetResourcesRequest.class,AWSResourceGroupsTaggingAPIClientBuilder.class, AWSResourceGroupsTaggingAPI.class })
+@PowerMockIgnore({"org.apache.*, javax.xml.*", "javax.net.ssl.*" })
 public class MetricsProcessorHelperTest {
 
     @Test
@@ -181,6 +193,88 @@ public class MetricsProcessorHelperTest {
         }
 
         return namespaceStats;
+    }
+
+
+    @Test
+    public void filterUsingTagsTest() throws Exception {
+
+        List<Dimension> dimensionsForListMetric = Lists.newArrayList();
+        Dimension dimension1 = new Dimension();
+        dimension1.setName("dimensionName1");
+        dimension1.setValue("dimension1");
+
+        Dimension dimension2 = new Dimension();
+        dimension2.setName("dimensionName2");
+        dimension2.setValue("dimension2");
+
+        dimensionsForListMetric.add(dimension1);
+        dimensionsForListMetric.add(dimension2);
+
+        List<Metric> listMetricsResult = Lists.newArrayList();
+        Metric awsMetric1 = new Metric()
+                .withMetricName("testMetric1")
+                .withNamespace("AWS/Namespace")
+                .withDimensions(dimensionsForListMetric);
+        listMetricsResult.add(awsMetric1);
+
+        List<Tags> tags = Lists.newArrayList();
+        Tags tag = new Tags();
+        tag.setTagName("testTagKey");
+        Set tagValue = Sets.newHashSet();
+        tagValue.add("testTagValue");
+        tag.setTagValue(tagValue);
+        tags.add(tag);
+
+        String dimensionUsedForFiltering = "dimensionName1";
+        String resourceType = "redshift:cluster";
+        String region = "us-west-1";
+
+
+        List<com.appdynamics.extensions.aws.config.Dimension> dimensionsFromConfig =
+                Lists.newArrayList();
+        com.appdynamics.extensions.aws.config.Dimension configDimension1 = new com.appdynamics.extensions.aws.config.Dimension();
+        configDimension1.setName("dimensionName1");
+        Set dimensionValues1 = Sets.newHashSet();
+        dimensionValues1.add("dimension1");
+        configDimension1.setValues(dimensionValues1);
+        dimensionsFromConfig.add(configDimension1);
+
+
+        com.appdynamics.extensions.aws.config.Dimension configDimension2 = new com.appdynamics.extensions.aws.config.Dimension();
+        configDimension2.setName("dimensionName2");
+        Set dimensionValues2 = Sets.newHashSet();
+        dimensionValues2.add("dimension2");
+        configDimension2.setValues(dimensionValues2);
+        dimensionsFromConfig.add(configDimension2);
+
+        MultiDimensionPredicate dimensionPredicate = new MultiDimensionPredicate(dimensionsFromConfig);
+        List<IncludeMetric> includeMetrics = Lists.newArrayList();
+        IncludeMetric includeMetric = new IncludeMetric();
+        includeMetric.setName("testMetric1");
+        includeMetrics.add(includeMetric);
+
+        Tag awsTag = new Tag().withKey("testTagKey").withValue("testTagValue");
+        GetResourcesResult getResourcesResult = mock(GetResourcesResult.class);
+        List<ResourceTagMapping> resourceTagMappingList = Lists.newArrayList();
+        ResourceTagMapping resourceTagMapping = new ResourceTagMapping()
+                .withResourceARN("arn:aws:redshift:us-west-1:12345672:cluster:dimension1")
+                .withTags(awsTag);
+        resourceTagMappingList.add(resourceTagMapping);
+        getResourcesResult.setResourceTagMappingList(resourceTagMappingList);
+        when(getResourcesResult.getResourceTagMappingList()).thenReturn(resourceTagMappingList);
+
+        AWSResourceGroupsTaggingAPI taggingAPIClient = mock(AWSResourceGroupsTaggingAPI.class);
+        AWSResourceGroupsTaggingAPIClientBuilder builder = mock(AWSResourceGroupsTaggingAPIClientBuilder.class);
+        whenNew(AWSResourceGroupsTaggingAPIClientBuilder.class).withNoArguments().thenReturn(builder);
+        when(builder.withRegion(anyString())).thenReturn(builder);
+        when(builder.build()).thenReturn(taggingAPIClient);
+        when(taggingAPIClient.getResources(any(GetResourcesRequest.class))).thenReturn(getResourcesResult);
+
+        List<AWSMetric> result= MetricsProcessorHelper.filterUsingTags(listMetricsResult,tags,dimensionUsedForFiltering,resourceType,region,dimensionPredicate,includeMetrics);
+
+        assertNotNull(result);
+
     }
 
 }
