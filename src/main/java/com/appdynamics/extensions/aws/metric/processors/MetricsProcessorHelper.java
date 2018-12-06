@@ -16,6 +16,7 @@ import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.Tags;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.metric.*;
+import com.appdynamics.extensions.aws.predicate.MultiDimensionPredicate;
 import com.appdynamics.extensions.aws.predicate.TagsPredicate;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -285,31 +286,23 @@ public class MetricsProcessorHelper {
         return String.format("%s%s", metricPrefix, toAppend);
     }
 
-    public static List<AWSMetric> filterUsingTags(List<Metric> listMetricsResult, List<Tags> tags,
-                                                  String dimensionUsedForFiltering,
-                                                  String resourceType,
-                                                  String region,
-                                                  Predicate<Metric> dimensionPredicate,
-                                                  List<IncludeMetric> includeMetrics) {
+    public static Set<String> filterUsingTags(List<Tags> tags,
+                                              String resourceType,
+                                              String region, int position
+                                                ) {
         List<TagFilter> tagFilters;
-        Set<String> resources;
-        List<Metric> filteredList = Lists.newArrayList();
-        List<Metric> tagFilteredMetricList = Lists.newArrayList();
+        Set<String> resources = Sets.newHashSet();
         TagsPredicate tagPredicate = new TagsPredicate(tags);
 
         if(tags == null || tags.isEmpty()){ //tag filtering disabled
-            LOGGER.debug("No tags specified in config.yml"); // return the input list as-is
-            listMetricsResult = Lists.newArrayList(Collections2.filter(listMetricsResult, dimensionPredicate));
-            return filterMetrics(listMetricsResult, includeMetrics);
+            LOGGER.debug("No tags specified in config.yml");
         }
         else {
             tagFilters = createTagFilters(tags);
             if (!tagFilters.isEmpty()){
                 GetResourcesResult result = getResources(resourceType, region, tagFilters);
                 if (result.getResourceTagMappingList().size() > 0) {
-                    resources = filterResourcesUsingTags(tagPredicate, result);
-                    filteredList = listMetricsFromFilteredResources(listMetricsResult,
-                            dimensionUsedForFiltering, resources, tagFilteredMetricList);
+                    resources = filterResourcesUsingTags(tagPredicate, result, position);
                 }
                 else {
                     LOGGER.warn("Received empty list of tags from AWS");
@@ -318,16 +311,18 @@ public class MetricsProcessorHelper {
             else {
                 LOGGER.warn("Tag names in config.yml are empty");
             }
-            listMetricsResult = Lists.newArrayList(Collections2.filter(filteredList, dimensionPredicate));
-            return filterMetrics(listMetricsResult, includeMetrics);
         }
+        return resources;
     }
 
-    private static List<Metric> listMetricsFromFilteredResources (List<Metric> listMetricsResult,
+    public static List<AWSMetric> listMetricsFromFilteredResources (List<Metric> listMetricsResult,
                                                                   String dimensionUsedForFiltering,
                                                                   Set<String> resources,
-                                                                  List<Metric> tagFilteredMetricList) {
+                                                                 MultiDimensionPredicate dimensionPredicate,
+                                                                 List<IncludeMetric> includeMetrics
+                                                                  ) {
         List<Metric> filteredList = Lists.newArrayList();
+        List<Metric> tagFilteredMetricList = Lists.newArrayList();
         for (String resource : resources) {
             Dimension dimension = new Dimension().withName(dimensionUsedForFiltering).withValue(resource);
             tagFilteredMetricList.add(new Metric().withDimensions(dimension));
@@ -339,17 +334,24 @@ public class MetricsProcessorHelper {
                 }
             }
         }
-        return filteredList;
+
+        if(!filteredList.isEmpty()) { //tagging disabled
+            listMetricsResult = Lists.newArrayList(Collections2.filter(filteredList, dimensionPredicate));
+        }
+        else {
+            listMetricsResult = Lists.newArrayList(Collections2.filter(listMetricsResult, dimensionPredicate));
+        }
+        return filterMetrics(listMetricsResult, includeMetrics);
     }
 
-    private static Set<String> filterResourcesUsingTags (Predicate<Tag> tagPredicate, GetResourcesResult result) {
+    private static Set<String> filterResourcesUsingTags (Predicate<Tag> tagPredicate, GetResourcesResult result, int position) {
         List<ResourceTagMapping> resourceTagMappingList = result.getResourceTagMappingList();
         Set<String> resources = Sets.newHashSet();
         for (ResourceTagMapping arn : resourceTagMappingList) {
             List<Tag> tag = arn.getTags();
             Collection<Tag> tagsFromArnAfterFilter = Collections2.filter(tag, tagPredicate);
             if (tagsFromArnAfterFilter.size() > 0) {
-                resources.add(extractResourceNameFromARN(arn.getResourceARN()));
+                resources.add(extractResourceNameFromARN(arn.getResourceARN(), position));
             }
         }
         return resources;
@@ -375,10 +377,12 @@ public class MetricsProcessorHelper {
         return tagFilters;
     }
 
-    private static String extractResourceNameFromARN(String resourceARN) {
+    private static String extractResourceNameFromARN(String resourceARN, int position) {
+
+        resourceARN = resourceARN.split(":")[position];
         String resource = resourceARN.contains("/") ? resourceARN.substring(resourceARN.lastIndexOf("/") + 1,
-                resourceARN.length()) : resourceARN.substring(resourceARN.lastIndexOf(":") + 1,
-                resourceARN.length()) ;
+        resourceARN.length()) : resourceARN.substring(resourceARN.lastIndexOf(":") + 1,
+        resourceARN.length()) ;
         LOGGER.debug("Extracting Resource Name from ARN:"+resource);
         return resource;
     }

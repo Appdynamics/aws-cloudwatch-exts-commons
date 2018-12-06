@@ -35,7 +35,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.powermock.api.mockito.PowerMockito.*;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.mock;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({GetResourcesRequest.class,AWSResourceGroupsTaggingAPIClientBuilder.class, AWSResourceGroupsTaggingAPI.class })
@@ -271,7 +273,7 @@ public class MetricsProcessorHelperTest {
         when(builder.build()).thenReturn(taggingAPIClient);
         when(taggingAPIClient.getResources(any(GetResourcesRequest.class))).thenReturn(getResourcesResult);
 
-        List<AWSMetric> result= MetricsProcessorHelper.filterUsingTags(listMetricsResult,tags,dimensionUsedForFiltering,resourceType,region,dimensionPredicate,includeMetrics);
+        Set<String> result= MetricsProcessorHelper.filterUsingTags(tags,resourceType,region,6);
 
         assertNotNull(result);
 

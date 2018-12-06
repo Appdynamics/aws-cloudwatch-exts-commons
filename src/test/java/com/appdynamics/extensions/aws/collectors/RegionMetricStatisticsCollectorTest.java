@@ -18,6 +18,7 @@ import com.appdynamics.extensions.aws.metric.StatisticType;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
 import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,14 +30,17 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.atomic.LongAdder;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.*;
-import static org.powermock.api.mockito.PowerMockito.*;
+import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.when;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({RegionEndpointProvider.class,
@@ -89,10 +93,11 @@ public class RegionMetricStatisticsCollectorTest {
 
         List<AWSMetric> testMetrics = getTestMetrics();
         List<Metric> metrics = getMetrics();
-
+        Set<String> resources = getResouces();
 
         when(mockMetricsProcessor.getMetrics(mockAwsCloudWatchAsync, eq(anyString()), any(LongAdder.class))).thenReturn(metrics);
-        when(mockMetricsProcessor.filterUsingTags(anyList(),anyList(),anyString())).thenReturn(testMetrics);
+        when(mockMetricsProcessor.filterUsingTags(anyList(),anyString())).thenReturn(resources);
+        when(mockMetricsProcessor.listMetricsFromFilteredResources(anyList(), anySet())).thenReturn(testMetrics);
         when(mockMetricsProcessor.getStatisticType(any(AWSMetric.class))).thenReturn(StatisticType.AVE);
         when(mockMetricsProcessor.getNamespace()).thenReturn("testNamespace");
 
@@ -115,11 +120,8 @@ public class RegionMetricStatisticsCollectorTest {
         when(mockBuilder.withPrefix(anyString())).thenReturn(mockBuilder);
         when(mockBuilder.build()).thenReturn(mockMetricStatsCollector1);
 
-
-
         String testRegion = "us-east-1";
         String testAccount = "testAccount";
-
 
         classUnderTest = new RegionMetricStatisticsCollector.Builder()
 
@@ -160,6 +162,14 @@ public class RegionMetricStatisticsCollectorTest {
         return metric;
     }
 
+    private Set<String> getResouces(){
+        Set<String> resources = Sets.newHashSet();
+        resources.add("arn:aws:s3:::appdynamics-testbucket");
+        resources.add("arn:aws:redshift:us-east-2:663982073101:cluster:myCluster");
+
+        return resources;
+    }
+
     @Test
     public void testRateLimit() throws Exception {
 
@@ -167,6 +177,7 @@ public class RegionMetricStatisticsCollectorTest {
         List<AWSMetric> testMetrics = getTestMetrics();
         List<Metric> metrics = getMetrics();
         List<AWSMetric> testAdditionalMetrics = getTestAdditionalMetrics();
+        Set<String> resources = getResouces();
         testMetrics.addAll(testAdditionalMetrics);
 
         MetricStatisticCollector mockMetricStatsCollector1 = mock(MetricStatisticCollector.class);
@@ -192,7 +203,9 @@ public class RegionMetricStatisticsCollectorTest {
         when(mockMetricsProcessor.getStatisticType(any(AWSMetric.class))).thenReturn(StatisticType.AVE);
         when(mockMetricsProcessor.getNamespace()).thenReturn("testNamespace");
         when(mockMetricsProcessor.getMetrics(mockAwsCloudWatchAsync, eq(anyString()), any(LongAdder.class))).thenReturn(metrics);
-        when(mockMetricsProcessor.filterUsingTags(anyList(),anyList(),anyString())).thenReturn(testMetrics);
+        when(mockMetricsProcessor.filterUsingTags(anyList(),anyString())).thenReturn(resources);
+        when(mockMetricsProcessor.listMetricsFromFilteredResources(anyList(), anySet())).thenReturn(testMetrics);
+
         when(mockMetricsProcessor.getStatisticType(any(AWSMetric.class))).thenReturn(StatisticType.AVE);
         when(mockMetricsProcessor.getNamespace()).thenReturn("testNamespace");
 

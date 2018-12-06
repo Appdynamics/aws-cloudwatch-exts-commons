@@ -15,6 +15,7 @@ import com.appdynamics.extensions.aws.metric.StatisticType;
 import com.appdynamics.extensions.metrics.Metric;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -60,5 +61,9 @@ public interface MetricsProcessor {
      */
     String getNamespace();
 
-    List<AWSMetric> filterUsingTags(List<com.amazonaws.services.cloudwatch.model.Metric> metrics, List<Tags> tags, String region);
+    Set<String> filterUsingTags(List<Tags> tags, String region);
+
+    List<AWSMetric> listMetricsFromFilteredResources (List<com.amazonaws.services.cloudwatch.model.Metric> listMetricsResult,
+                                                                                                         Set<String> resources);
+
 }

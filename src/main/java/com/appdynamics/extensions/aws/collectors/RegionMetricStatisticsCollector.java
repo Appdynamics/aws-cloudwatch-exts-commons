@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -103,7 +104,10 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                     metricsProcessor.getNamespace(), accountName, region));
 
             List<Metric> metrics = metricsProcessor.getMetrics(awsCloudWatch, accountName, awsRequestsCounter); //--> list-metrics call
-            List<AWSMetric> filteredMetrics = metricsProcessor.filterUsingTags(metrics, tags, region);
+            Set<String> resources = metricsProcessor.filterUsingTags(tags, region);
+            List<AWSMetric> filteredMetrics;
+            filteredMetrics = metricsProcessor.listMetricsFromFilteredResources(metrics,resources);
+
             regionMetricStats = new RegionMetricStatistics();
             regionMetricStats.setRegion(region);
 
