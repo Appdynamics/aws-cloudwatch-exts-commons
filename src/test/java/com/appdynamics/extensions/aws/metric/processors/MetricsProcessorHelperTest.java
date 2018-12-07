@@ -23,6 +23,7 @@ import com.appdynamics.extensions.aws.predicate.MultiDimensionPredicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -197,14 +198,13 @@ public class MetricsProcessorHelperTest {
         return namespaceStats;
     }
 
-
     @Test
-    public void filterUsingTagsTest() throws Exception {
+    public void whenTaggingEnabledThenFilterUsingTagsTest() throws Exception {
 
         List<Dimension> dimensionsForListMetric = Lists.newArrayList();
         Dimension dimension1 = new Dimension();
         dimension1.setName("dimensionName1");
-        dimension1.setValue("dimension1");
+        dimension1.setValue("appdynamics-testbucket");
 
         Dimension dimension2 = new Dimension();
         dimension2.setName("dimensionName2");
@@ -228,7 +228,6 @@ public class MetricsProcessorHelperTest {
         tag.setTagValue(tagValue);
         tags.add(tag);
 
-        String dimensionUsedForFiltering = "dimensionName1";
         String resourceType = "redshift:cluster";
         String region = "us-west-1";
 
@@ -277,6 +276,186 @@ public class MetricsProcessorHelperTest {
 
         assertNotNull(result);
 
+    }
+
+
+    @Test
+    public void whenTaggingDisabledThenTaggedResourcesListEmpty()  {
+
+        List<Dimension> dimensionsForListMetric = Lists.newArrayList();
+        Dimension dimension1 = new Dimension();
+        dimension1.setName("dimensionName1");
+        dimension1.setValue("appdynamics-testbucket");
+
+        Dimension dimension2 = new Dimension();
+        dimension2.setName("dimensionName2");
+        dimension2.setValue("dimension2");
+
+        dimensionsForListMetric.add(dimension1);
+        dimensionsForListMetric.add(dimension2);
+
+        List<Metric> listMetricsResult = Lists.newArrayList();
+        Metric awsMetric1 = new Metric()
+                .withMetricName("testMetric1")
+                .withNamespace("AWS/Namespace")
+                .withDimensions(dimensionsForListMetric);
+        listMetricsResult.add(awsMetric1);
+
+        List<Tags> tags = Lists.newArrayList();
+
+        String resourceType = "redshift:cluster";
+        String region = "us-west-1";
+
+        List<com.appdynamics.extensions.aws.config.Dimension> dimensionsFromConfig =
+                Lists.newArrayList();
+        com.appdynamics.extensions.aws.config.Dimension configDimension1 = new com.appdynamics.extensions.aws.config.Dimension();
+        configDimension1.setName("dimensionName1");
+        Set dimensionValues1 = Sets.newHashSet();
+        dimensionValues1.add("dimension1");
+        configDimension1.setValues(dimensionValues1);
+        dimensionsFromConfig.add(configDimension1);
+
+
+        com.appdynamics.extensions.aws.config.Dimension configDimension2 = new com.appdynamics.extensions.aws.config.Dimension();
+        configDimension2.setName("dimensionName2");
+        Set dimensionValues2 = Sets.newHashSet();
+        dimensionValues2.add("dimension2");
+        configDimension2.setValues(dimensionValues2);
+        dimensionsFromConfig.add(configDimension2);
+
+        List<IncludeMetric> includeMetrics = Lists.newArrayList();
+        IncludeMetric includeMetric = new IncludeMetric();
+        includeMetric.setName("testMetric1");
+        includeMetrics.add(includeMetric);
+        Set<String> result= MetricsProcessorHelper.filterUsingTags(tags,resourceType,region,6);
+
+        assertEquals(result.size(),0);
+
+    }
+
+    //filtered list is not empty
+    @Test
+    public void  whenTaggedResourcesListNotEmptyThenListMetricsFromFilteredResources (){
+
+        Set<String> resources =  getResourceNames();
+
+        List<Dimension> dimensionsForListMetric = Lists.newArrayList();
+        Dimension dimension1 = new Dimension();
+        dimension1.setName("dimensionName1");
+        dimension1.setValue("appdynamics-testbucket");
+
+        Dimension dimension2 = new Dimension();
+        dimension2.setName("dimensionName2");
+        dimension2.setValue("myCluster");
+
+        dimensionsForListMetric.add(dimension1);
+        dimensionsForListMetric.add(dimension2);
+
+        List<Metric> listMetricsResult = Lists.newArrayList();
+        Metric awsMetric1 = new Metric()
+                .withMetricName("testMetric1")
+                .withNamespace("AWS/Namespace")
+                .withDimensions(dimensionsForListMetric);
+        listMetricsResult.add(awsMetric1);
+
+        List<IncludeMetric> includeMetrics = Lists.newArrayList();
+        IncludeMetric metric1 = new IncludeMetric();
+        metric1.setName("testMetric1");
+        IncludeMetric metric2 = new IncludeMetric();
+        metric2.setName("testMetric2");
+        includeMetrics.add(metric1);
+        includeMetrics.add(metric2);
+
+        String dimensionUsedForFiltering = "dimensionName1";
+
+        List<com.appdynamics.extensions.aws.config.Dimension> dimensionsFromConfig = Lists.newArrayList();
+        com.appdynamics.extensions.aws.config.Dimension configDimension1 = new com.appdynamics.extensions.aws.config.Dimension();
+        configDimension1.setName("dimensionName1");
+        Set dimensionValues1 = Sets.newHashSet();
+        dimensionValues1.add("appdynamics-testbucket");
+        configDimension1.setValues(dimensionValues1);
+        dimensionsFromConfig.add(configDimension1);
+
+
+        com.appdynamics.extensions.aws.config.Dimension configDimension2 = new com.appdynamics.extensions.aws.config.Dimension();
+        configDimension2.setName("dimensionName2");
+        Set dimensionValues2 = Sets.newHashSet();
+        dimensionValues2.add(".*");
+        configDimension2.setValues(dimensionValues2);
+        dimensionsFromConfig.add(configDimension2);
+
+        MultiDimensionPredicate dimensionPredicate = new MultiDimensionPredicate(dimensionsFromConfig);
+
+        List<AWSMetric> result = MetricsProcessorHelper.listMetricsFromFilteredResources
+                (listMetricsResult,dimensionUsedForFiltering,resources,dimensionPredicate,includeMetrics);
+        Assert.assertEquals(result.get(0).getMetric().getMetricName(), metric1.getName());
+
+    }
+
+    @Test
+    public void  whenTaggedResourcesListEmptyThenListMetricsFromFilteredResources (){
+
+        Set<String> resources =  new HashSet<>();
+
+        List<Dimension> dimensionsForListMetric = Lists.newArrayList();
+        Dimension dimension1 = new Dimension();
+        dimension1.setName("dimensionName1");
+        dimension1.setValue("appdynamics-testbucket");
+
+        Dimension dimension2 = new Dimension();
+        dimension2.setName("dimensionName2");
+        dimension2.setValue("myCluster");
+
+        dimensionsForListMetric.add(dimension1);
+        dimensionsForListMetric.add(dimension2);
+
+        List<Metric> listMetricsResult = Lists.newArrayList();
+        Metric awsMetric1 = new Metric()
+                .withMetricName("testMetric1")
+                .withNamespace("AWS/Namespace")
+                .withDimensions(dimensionsForListMetric);
+        listMetricsResult.add(awsMetric1);
+
+        List<IncludeMetric> includeMetrics = Lists.newArrayList();
+        IncludeMetric metric1 = new IncludeMetric();
+        metric1.setName("testMetric1");
+        IncludeMetric metric2 = new IncludeMetric();
+        metric2.setName("testMetric2");
+        includeMetrics.add(metric1);
+        includeMetrics.add(metric2);
+
+        String dimensionUsedForFiltering = "dimensionName1";
+
+        List<com.appdynamics.extensions.aws.config.Dimension> dimensionsFromConfig = Lists.newArrayList();
+        com.appdynamics.extensions.aws.config.Dimension configDimension1 = new com.appdynamics.extensions.aws.config.Dimension();
+        configDimension1.setName("dimensionName1");
+        Set dimensionValues1 = Sets.newHashSet();
+        dimensionValues1.add("appdynamics-testbucket");
+        configDimension1.setValues(dimensionValues1);
+        dimensionsFromConfig.add(configDimension1);
+
+
+        com.appdynamics.extensions.aws.config.Dimension configDimension2 = new com.appdynamics.extensions.aws.config.Dimension();
+        configDimension2.setName("dimensionName2");
+        Set dimensionValues2 = Sets.newHashSet();
+        dimensionValues2.add(".*");
+        configDimension2.setValues(dimensionValues2);
+        dimensionsFromConfig.add(configDimension2);
+
+        MultiDimensionPredicate dimensionPredicate = new MultiDimensionPredicate(dimensionsFromConfig);
+
+        List<AWSMetric> result = MetricsProcessorHelper.listMetricsFromFilteredResources
+                (listMetricsResult,dimensionUsedForFiltering,resources,dimensionPredicate,includeMetrics);
+        Assert.assertEquals(result.get(0).getMetric().getMetricName(), metric1.getName());
+
+    }
+
+    private Set<String> getResourceNames(){
+        Set<String> resources = Sets.newHashSet();
+        resources.add("appdynamics-testbucket");
+        resources.add("myCluster");
+
+        return resources;
     }
 
 }

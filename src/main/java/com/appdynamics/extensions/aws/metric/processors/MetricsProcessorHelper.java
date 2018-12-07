@@ -335,10 +335,11 @@ public class MetricsProcessorHelper {
             }
         }
 
-        if(!filteredList.isEmpty()) { //tagging disabled
+
+        if(!filteredList.isEmpty()) {
             listMetricsResult = Lists.newArrayList(Collections2.filter(filteredList, dimensionPredicate));
         }
-        else {
+        else { //tagging disabled
             listMetricsResult = Lists.newArrayList(Collections2.filter(listMetricsResult, dimensionPredicate));
         }
         return filterMetrics(listMetricsResult, includeMetrics);
