@@ -15,11 +15,18 @@ public class DashboardConfig {
 
     private Boolean enabled;
     private String dashboardName;
-    private Integer executionFrequencyMinutes;
     private String pathToSIMDashboard;
     private String pathToNormalDashboard;
     private Integer periodicDashboardCheckInSeconds;
+    private Boolean sslCertCheckEnabled;
 
+    public Boolean getSslCertCheckEnabled() {
+        return sslCertCheckEnabled;
+    }
+
+    public void setSslCertCheckEnabled(Boolean sslCertCheckEnabled) {
+        this.sslCertCheckEnabled = sslCertCheckEnabled;
+    }
 
     public Integer getPeriodicDashboardCheckInSeconds() {
         return periodicDashboardCheckInSeconds;
@@ -45,13 +52,6 @@ public class DashboardConfig {
         this.dashboardName = dashboardName;
     }
 
-    public Integer getExecutionFrequencyMinutes() {
-        return executionFrequencyMinutes;
-    }
-
-    public void setExecutionFrequencyMinutes(Integer executionFrequencyMinutes) {
-        this.executionFrequencyMinutes = executionFrequencyMinutes;
-    }
 
     public String getPathToSIMDashboard() {
         return pathToSIMDashboard;
@@ -68,6 +68,5 @@ public class DashboardConfig {
     public void setPathToNormalDashboard(String pathToNormalDashboard) {
         this.pathToNormalDashboard = pathToNormalDashboard;
     }
-
 
 }

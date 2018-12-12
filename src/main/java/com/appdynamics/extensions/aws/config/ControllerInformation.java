@@ -18,7 +18,6 @@ public class ControllerInformation {
     private String account;
     private String username;
     private String password;
-    private String useSsl;
     private String encryptedPassword;
     private String encryptionKey;
     private Boolean simEnabled;
@@ -29,6 +28,7 @@ public class ControllerInformation {
     protected Boolean enableOrchestration;
     protected String uniqueHostId;
     protected String accountAccessKey;
+    protected String machinePath;
 
     public Boolean getEnableOrchestration() {
         return enableOrchestration;
@@ -62,7 +62,6 @@ public class ControllerInformation {
         this.machinePath = machinePath;
     }
 
-    protected String machinePath;
 
     public Boolean getControllerSslEnabled() {
         return controllerSslEnabled;
@@ -110,14 +109,6 @@ public class ControllerInformation {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public String getUseSsl() {
-        return useSsl;
-    }
-
-    public void setUseSsl(String useSsl) {
-        this.useSsl = useSsl;
     }
 
     public String getEncryptedPassword() {
