@@ -121,8 +121,8 @@ customDashboard:
 # add the credentials of an existing user.
 
 controllerInfo:
-    host: ""
-    port: ""
+    controllerHost: ""
+    controllerPort: ""
     account: ""
     username: ""
     password: ""

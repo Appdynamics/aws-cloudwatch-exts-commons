@@ -39,6 +39,8 @@ public class Configuration {
 
     private ControllerInformation controllerInfo;
 
+    private DashboardConfig customDashboard;
+
     public DashboardConfig getCustomDashboard() {
         return customDashboard;
     }
@@ -47,8 +49,6 @@ public class Configuration {
         this.customDashboard = dashboardConfig;
     }
 
-    private DashboardConfig customDashboard;
-
     public ControllerInformation getControllerInfo() {
         return controllerInfo;
     }
@@ -56,7 +56,6 @@ public class Configuration {
     public void setControllerInfo(ControllerInformation controllerInformation) {
         this.controllerInfo = controllerInformation;
     }
-
 
     public List<Account> getAccounts() {
         return accounts;

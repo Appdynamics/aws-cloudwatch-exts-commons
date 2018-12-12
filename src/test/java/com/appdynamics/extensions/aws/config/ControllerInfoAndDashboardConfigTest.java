@@ -39,8 +39,8 @@ public class ControllerInfoAndDashboardConfigTest {
         Assert.assertTrue(config.getControllerInfo().getAccount().equals("account"));
         Assert.assertTrue(config.getControllerInfo().getUsername().equals("admin"));
         Assert.assertTrue(config.getControllerInfo().getPassword().equals("root"));
-        Assert.assertTrue(config.getControllerInfo().getHost().equals("host"));
-        Assert.assertTrue(config.getControllerInfo().getPort().equals(9000));
+        Assert.assertTrue(config.getControllerInfo().getControllerHost().equals("host"));
+        Assert.assertTrue(config.getControllerInfo().getControllerPort().equals(9000));
 
     }
 

@@ -13,30 +13,79 @@ package com.appdynamics.extensions.aws.config;
  */
 public class ControllerInformation {
 
-    private String host;
-    private Integer port;
+    private String controllerHost;
+    private Integer controllerPort;
     private String account;
     private String username;
     private String password;
     private String useSsl;
     private String encryptedPassword;
     private String encryptionKey;
+    private Boolean simEnabled;
+    private String applicationName;
+    private String tierName;
+    private String nodeName;
+    private Boolean controllerSslEnabled;
+    protected Boolean enableOrchestration;
+    protected String uniqueHostId;
+    protected String accountAccessKey;
 
-
-    public String getHost() {
-        return host;
+    public Boolean getEnableOrchestration() {
+        return enableOrchestration;
     }
 
-    public void setHost(String host) {
-        this.host = host;
+    public void setEnableOrchestration(Boolean enableOrchestration) {
+        this.enableOrchestration = enableOrchestration;
     }
 
-    public Integer getPort() {
-        return port;
+    public String getUniqueHostId() {
+        return uniqueHostId;
     }
 
-    public void setPort(Integer port) {
-        this.port = port;
+    public void setUniqueHostId(String uniqueHostId) {
+        this.uniqueHostId = uniqueHostId;
+    }
+
+    public String getAccountAccessKey() {
+        return accountAccessKey;
+    }
+
+    public void setAccountAccessKey(String accountAccessKey) {
+        this.accountAccessKey = accountAccessKey;
+    }
+
+    public String getMachinePath() {
+        return machinePath;
+    }
+
+    public void setMachinePath(String machinePath) {
+        this.machinePath = machinePath;
+    }
+
+    protected String machinePath;
+
+    public Boolean getControllerSslEnabled() {
+        return controllerSslEnabled;
+    }
+
+    public void setControllerSslEnabled(Boolean controllerSslEnabled) {
+        this.controllerSslEnabled = controllerSslEnabled;
+    }
+
+    public String getControllerHost() {
+        return controllerHost;
+    }
+
+    public void setControllerHost(String controllerHost) {
+        this.controllerHost = controllerHost;
+    }
+
+    public Integer getControllerPort() {
+        return controllerPort;
+    }
+
+    public void setControllerPort(Integer controllerPort) {
+        this.controllerPort = controllerPort;
     }
 
     public String getAccount() {
@@ -87,5 +136,36 @@ public class ControllerInformation {
         this.encryptionKey = encryptionKey;
     }
 
+    public Boolean getSimEnabled() {
+        return simEnabled;
+    }
+
+    public void setSimEnabled(Boolean simEnabled) {
+        this.simEnabled = simEnabled;
+    }
+
+    public String getApplicationName() {
+        return applicationName;
+    }
+
+    public void setApplicationName(String applicationName) {
+        this.applicationName = applicationName;
+    }
+
+    public String getTierName() {
+        return tierName;
+    }
+
+    public void setTierName(String tierName) {
+        this.tierName = tierName;
+    }
+
+    public String getNodeName() {
+        return nodeName;
+    }
+
+    public void setNodeName(String nodeName) {
+        this.nodeName = nodeName;
+    }
 
 }
