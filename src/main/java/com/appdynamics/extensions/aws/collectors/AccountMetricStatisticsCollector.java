@@ -7,12 +7,6 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_MAX_ERROR_RETRY;
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSClientConfiguration;
-import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSCredentials;
-import static com.appdynamics.extensions.aws.validators.Validator.validateAccount;
-
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.appdynamics.extensions.MonitorExecutorService;
@@ -32,13 +26,14 @@ import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
+
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_MAX_ERROR_RETRY;
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
+import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSClientConfiguration;
+import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSCredentials;
+import static com.appdynamics.extensions.aws.validators.Validator.validateAccount;
 
 /**
  * Collects statistics (of specified regions) for specified account

@@ -17,13 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
-import com.appdynamics.extensions.aws.config.Account;
-import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
-import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
-import com.appdynamics.extensions.aws.config.IncludeMetric;
-import com.appdynamics.extensions.aws.config.MetricsConfig;
-import com.appdynamics.extensions.aws.config.MetricsTimeRange;
-import com.appdynamics.extensions.aws.config.ProxyConfig;
+import com.appdynamics.extensions.aws.config.*;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
@@ -63,6 +57,13 @@ public class NamespaceMetricStatisticsCollectorTest {
 
     @Mock
     private ConcurrencyConfig mockConcurrencyConfig;
+
+    @Mock
+    private DashboardConfig mockDashboardConfig;
+
+    @Mock
+    private ControllerInformation mockControllerInformation;
+
 
     @SuppressWarnings("unchecked")
     @Test
@@ -112,7 +113,7 @@ public class NamespaceMetricStatisticsCollectorTest {
         classUnderTest = new NamespaceMetricStatisticsCollector.Builder(testAccounts,
                 mockConcurrencyConfig,
                 mockMetricsConfig,
-                mockMetricsProcessor, "Test|Prefix")
+                mockMetricsProcessor, "Test|Prefix", mockDashboardConfig, mockControllerInformation)
                 .build();
 
         classUnderTest.call();

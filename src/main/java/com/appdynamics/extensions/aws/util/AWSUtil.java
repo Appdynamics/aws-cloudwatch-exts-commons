@@ -7,6 +7,9 @@
 
 package com.appdynamics.extensions.aws.util;
 
+import static com.appdynamics.extensions.TaskInputArgs.ENCRYPTED_PASSWORD;
+import static com.appdynamics.extensions.TaskInputArgs.ENCRYPTION_KEY;
+
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -55,8 +58,8 @@ public class AWSUtil {
 
     private static String getDecryptedPassword(String encryptedPassword, String encryptionKey) {
         Map<String, String> cryptoMap = Maps.newHashMap();
-        cryptoMap.put("password-encrypted", encryptedPassword);
-        cryptoMap.put("encryption-key", encryptionKey);
+        cryptoMap.put(ENCRYPTED_PASSWORD, encryptedPassword);
+        cryptoMap.put(ENCRYPTION_KEY, encryptionKey);
         return CryptoUtil.getPassword(cryptoMap);
     }
 

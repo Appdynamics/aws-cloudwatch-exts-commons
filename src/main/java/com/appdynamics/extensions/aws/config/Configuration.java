@@ -37,6 +37,26 @@ public class Configuration {
 
     private List<Dimension> dimensions;
 
+    private ControllerInformation controllerInfo;
+
+    private DashboardConfig customDashboard;
+
+    public DashboardConfig getCustomDashboard() {
+        return customDashboard;
+    }
+
+    public void setCustomDashboard(DashboardConfig dashboardConfig) {
+        this.customDashboard = dashboardConfig;
+    }
+
+    public ControllerInformation getControllerInfo() {
+        return controllerInfo;
+    }
+
+    public void setControllerInfo(ControllerInformation controllerInformation) {
+        this.controllerInfo = controllerInformation;
+    }
+
     public List<Account> getAccounts() {
         return accounts;
     }

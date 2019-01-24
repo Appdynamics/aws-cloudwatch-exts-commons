@@ -1,0 +1,238 @@
+
+#This will create this metric in all the tiers, under this path. Please make sure to have a trailing |
+#metricPrefix: "Custom Metrics|Amazon ELB|"
+
+#This will create it in specific Tier aka Component. Replace <COMPONENT_ID>. Please make sure to have a trailing |.
+#To find out the COMPONENT_ID, please see the screen shot here https://docs.appdynamics.com/display/PRO42/Build+a+Monitoring+Extension+Using+Java
+
+# Metric list can be found here : https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/elb-metricscollected.html
+
+metricPrefix: "Server|Component:29|Custom Metrics|Amazon ELB|"
+
+accounts:
+  - awsAccessKey: ""
+    awsSecretKey: "7ETG/"
+    displayAccountName: "Appd"
+
+    # Regions where cloudwatch is registered
+    # Allowed values: ap-southeast-1, ap-southeast-2, ap-northeast-1, eu-central-1,
+    #                 us-east-1, eu-west-1, us-west-1, us-west-2, sa-east-1
+    #
+    regions: ["us-east-1"]
+
+#Provide Encryption key for Encrypted password.
+credentialsDecryptionConfig:
+  enableDecryption: "false"
+  encryptionKey:
+
+proxyConfig:
+  host:
+  port:
+  username:
+  password:
+
+# Classic (namespace : "AWS/ELB")
+# Dimensions : AvailabilityZone, LoadBalancerName
+
+# dimensions:
+#    - name: "LoadBalancerName"
+#      displayName: "Load Balancer Name"
+#      values: []
+#    - name: "AvailabilityZone"
+#      displayName: "Availability Zone"
+#      values: []
+
+dimensions:
+   - name: "LoadBalancerName"
+     displayName: "LoadBalancer Name"
+     values: [".*"]
+   - name: "AvailabilityZone"
+     displayName: "Availability Zone"
+     values: [".*"]
+
+# Global metrics config for all accounts
+metricsConfig:
+
+    # By default, all metrics retrieved from cloudwatch are 'Average' values.
+    # This option allows you to override the metric type.
+    #
+    # Allowed statTypes are: ave, max, min, sum, samplecount
+    #
+    # Note: Irrespective of the metric type, value will still be reported as
+    # Observed value to the Controller
+    includeMetrics:
+       - name: "BackendConnectionErrors"
+         alias: "Backend Connection Errors"
+         statType: "sum"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+       - name: "HealthyHostCount"
+         alias: "Healthy Host Count"
+         statType: "ave"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+       - name: "HTTPCode_Backend_2XX"
+         alias: "HTTPCode_Backend_2XX"
+         statType: "sum"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+       - name: "HTTPCode_Backend_3XX"
+         alias: "HTTPCode_Backend_3XX"
+         statType: "sum"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+       - name: "HTTPCode_Backend_4XX"
+         alias: "HTTPCode_Backend_4XX"
+         statType: "sum"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+       - name: "HTTPCode_Backend_5XX"
+         alias: "HTTPCode_Backend_5XX"
+         statType: "sum"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+       - name: "HTTPCode_ELB_4XX"
+         alias: "HTTPCode_ELB_4XX"
+         statType: "sum"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+       - name: "HTTPCode_ELB_5XX"
+         alias: "HTTPCode_ELB_5XX"
+         statType: "sum"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+       - name: "Latency"
+         alias: "Latencyx1000"
+         statType: "ave"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1000
+       - name: "RequestCount"
+         alias: "Request Count"
+         statType: "sum"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+       - name: "SpilloverCount"
+         alias: "Spillover Count"
+         statType: "sum"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+       - name: "SurgeQueueLength"
+         alias: "Surge Queue Length"
+         statType: "ave"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+       - name: "UnHealthyHostCount"
+         alias: "UnHealthy Host Count"
+         statType: "ave"
+         aggregationType: "AVERAGE"
+         timeRollUpType: "AVERAGE"
+         clusterRollUpType: "INDIVIDUAL"
+         delta: false
+         multiplier: 1
+
+
+    metricsTimeRange:
+      startTimeInMinsBeforeNow: 5
+      endTimeInMinsBeforeNow: 0
+
+    # Rate limit ( per second ) for GetMetricStatistics, default value is 400. https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_limits.html
+    getMetricStatisticsRateLimit: 400
+
+    #
+    # The max number of retry attempts for failed retryable requests
+    # (ex: 5xx error responses from a service) or throttling errors
+    #
+    maxErrorRetrySize: 3
+
+#Allowed values are Basic and Detailed. Refer https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-cloudwatch-new.html for more information
+# Basic will fire CloudWatch API calls every 5 minutes
+# Detailed will fire CloudWatch API calls every 1 minutes
+cloudWatchMonitoring: "Basic"
+
+concurrencyConfig:
+  noOfAccountThreads: 3
+  noOfRegionThreadsPerAccount: 3
+  noOfMetricThreadsPerRegion: 3
+  #Thread timeout in seconds
+  threadTimeOut: 30
+
+# Generate a custom dashboard based on the provided template
+customDashboard:
+    enabled: true
+    dashboardName: "AWS ELB Monitor Dashboard"
+
+    # Update the path to the dashboard file.
+    pathToSIMDashboard: "monitors/AWSELBMonitor/simDashboard.json"
+    pathToNormalDashboard: "monitors/AWSELBMonitor/normalDashboard.json"
+    periodicDashboardCheckInSeconds: 300
+
+# To upload the dashboard, please create a user from Controller UI or
+# add the credentials of an existing user.
+
+controllerInfo:
+    controllerHost: "host"
+    controllerPort: 9000
+    account: "account"
+    username: "admin"
+    password: "root"
+    # OPTIONAL Items
+    encryptedPassword: ""
+    encryptionKey: ""
+
+
+regionEndPoints:
+  us-east-1 : monitoring.us-east-1.amazonaws.com
+  us-east-2 : monitoring.us-east-2.amazonaws.com
+  us-west-1 : monitoring.us-west-1.amazonaws.com
+  us-west-2 : monitoring.us-west-2.amazonaws.com
+  ap-northeast-1 : monitoring.ap-northeast-1.amazonaws.com
+  ap-northeast-2: monitoring.ap-northeast-2.amazonaws.com
+  ap-northeast-3 : monitoring.ap-northeast-3.amazonaws.com
+  ap-south-1 : monitoring.ap-south-1.amazonaws.com
+  ap-southeast-1 : monitoring.ap-southeast-1.amazonaws.com
+  ap-southeast-2 : monitoring.ap-southeast-2.amazonaws.com
+  ca-central-1 : monitoring.ca-central-1.amazonaws.com
+  cn-north-1 : monitoring.cn-north-1.amazonaws.com.cn
+  cn-northwest-1 : monitoring.cn-northwest-1.amazonaws.com.cn
+  eu-central-1 : monitoring.eu-central-1.amazonaws.com
+  eu-west-1 : monitoring.eu-west-1.amazonaws.com
+  eu-west-2 : monitoring.eu-west-2.amazonaws.com
+  eu-west-3 : monitoring.eu-west-3.amazonaws.com
+  sa-east-1 : monitoring.sa-east-1.amazonaws.com
+  us-gov-west-1 : monitoring.us-gov-west-1.amazonaws.com
