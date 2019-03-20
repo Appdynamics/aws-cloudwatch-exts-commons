@@ -88,14 +88,12 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
                 metricsProcessor.getNamespace()));
 
         if (accounts != null && !accounts.isEmpty()) {
-            ScheduledExecutorService threadPool = null;
+            MonitorExecutorService executorService = null;
 
             try {
                 validateNamespace(metricsProcessor.getNamespace());
 
-                threadPool = Executors.newScheduledThreadPool(getNoOfAccountThreads());
-
-                MonitorExecutorService executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(getNoOfAccountThreads()));
+                executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(getNoOfAccountThreads()));
 
 
                 List<FutureTask<AccountMetricStatistics>> tasks =
@@ -120,8 +118,8 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
                                 metricsProcessor.getNamespace()), e);
 
             } finally {
-                if (threadPool != null && !threadPool.isShutdown()) {
-                    threadPool.shutdown();
+                if (executorService != null && !executorService.isShutdown()) {
+                    executorService.shutdown();
                 }
             }
 

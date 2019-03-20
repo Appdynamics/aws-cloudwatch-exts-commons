@@ -14,6 +14,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
@@ -23,6 +24,7 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.Metric;
+import com.appdynamics.extensions.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
@@ -38,6 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -46,6 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.LongAdder;
 
 @RunWith(PowerMockRunner.class)
@@ -240,7 +244,7 @@ public class RegionMetricStatisticsCollectorTest {
 
         System.out.println("Waiting for rate limit to pass");
 
-        Thread.currentThread().sleep(1000);
+        Thread.sleep(1000);
 
         canAcquire = rateLimiter.tryAcquire();
         assertTrue("Should be able to acquire", canAcquire);
@@ -272,6 +276,70 @@ public class RegionMetricStatisticsCollectorTest {
         }
 
         return testMetrics;
+    }
+
+    @Test
+    public void testThreadPoolShutdown() throws Exception {
+        when(mockRegionEndpointProvider.getEndpoint(anyString())).thenReturn("test-endpoint");
+
+        List<AWSMetric> testMetrics = getTestMetrics();
+        when(mockMetricsProcessor.getMetrics(eq(mockAwsCloudWatch), anyString(), any(LongAdder.class))).thenReturn(testMetrics);
+        when(mockMetricsProcessor.getStatisticType(any(AWSMetric.class))).thenReturn(StatisticType.AVE);
+        when(mockMetricsProcessor.getNamespace()).thenReturn("testNamespace");
+
+
+        MetricStatisticCollector mockMetricStatsCollector1 = mock(MetricStatisticCollector.class);
+        MetricStatistic metricStatistic1 = createTestMetricStatistics(testMetrics.get(0));
+        when(mockMetricStatsCollector1.call()).thenReturn(metricStatistic1);
+
+        MetricStatisticCollector mockMetricStatsCollector2 = mock(MetricStatisticCollector.class);
+        MetricStatistic metricStatistic2 = createTestMetricStatistics(testMetrics.get(1));
+        when(mockMetricStatsCollector2.call()).thenReturn(metricStatistic2);
+
+        // simulate creation of metric stats collector
+        MetricStatisticCollector.Builder mockBuilder = mock(MetricStatisticCollector.Builder.class);
+        whenNew(MetricStatisticCollector.Builder.class).withNoArguments().thenReturn(mockBuilder);
+        when(mockBuilder.withAccountName(anyString())).thenReturn(mockBuilder);
+        when(mockBuilder.withAwsCloudWatch(mockAwsCloudWatch)).thenReturn(mockBuilder);
+        when(mockBuilder.withMetric(any(AWSMetric.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withRegion(anyString())).thenReturn(mockBuilder);
+        when(mockBuilder.withStatType(any(StatisticType.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withAWSRequestCounter(requestsCounter)).thenReturn(mockBuilder);
+        when(mockBuilder.withPrefix(anyString())).thenReturn(mockBuilder);
+        when(mockBuilder.build()).thenReturn(mockMetricStatsCollector1, mockMetricStatsCollector2);
+
+
+        String testRegion = "testRegion";
+        String testAccount = "testAccount";
+
+        classUnderTest = new RegionMetricStatisticsCollector.Builder()
+                .withAmazonCloudWatchConfig(mockAWSCredentials, mockAwsClientConfig)
+                .withMetricsProcessor(mockMetricsProcessor)
+                .withMetricsTimeRange(new MetricsTimeRange())
+                .withAccountName(testAccount)
+                .withRegion(testRegion)
+                .withRateLimiter(RateLimiter.create(400))
+                .withAWSRequestCounter(requestsCounter)
+                .withPrefix("Custom Metrics|AWS|")
+                .build();
+
+        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(2);
+        MonitorThreadPoolExecutor executorService = new MonitorThreadPoolExecutor(scheduledThreadPoolExecutor);
+
+        MonitorThreadPoolExecutor executorServiceSpy = Mockito.spy(executorService);
+
+        whenNew(MonitorThreadPoolExecutor.class).withArguments(any(ScheduledThreadPoolExecutor.class)).thenReturn(executorServiceSpy);
+
+        RegionMetricStatistics result = classUnderTest.call();
+
+        assertEquals(testRegion, result.getRegion());
+        assertEquals(testMetrics.size(), result.getMetricStatisticsList().size());
+        assertEquals(metricStatistic1, result.getMetricStatisticsList().get(0));
+        assertEquals(metricStatistic2, result.getMetricStatisticsList().get(1));
+
+        //Test if shutdown was called once on MonitorThreadPoolExecutor
+        verify(executorServiceSpy, Mockito.times(1)).shutdown();
     }
 
     private List<AWSMetric> getTestAdditionalMetrics() {
