@@ -32,8 +32,9 @@ import org.joda.time.DateTime;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.LongAdder;
@@ -112,7 +113,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
             if (metrics != null && !metrics.isEmpty()) {
 
-                executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(noOfMetricThreadsPerRegion));
+                executorService = new MonitorThreadPoolExecutor((ThreadPoolExecutor) Executors.newFixedThreadPool(noOfMetricThreadsPerRegion));
 
 
                 List<FutureTask<MetricStatistic>> tasks = createConcurrentMetricTasks(

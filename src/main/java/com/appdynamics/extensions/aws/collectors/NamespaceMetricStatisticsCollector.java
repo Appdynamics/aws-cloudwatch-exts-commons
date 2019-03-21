@@ -33,8 +33,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.LongAdder;
@@ -88,14 +87,12 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
                 metricsProcessor.getNamespace()));
 
         if (accounts != null && !accounts.isEmpty()) {
-            ScheduledExecutorService threadPool = null;
+            MonitorExecutorService executorService = null;
 
             try {
                 validateNamespace(metricsProcessor.getNamespace());
 
-                threadPool = Executors.newScheduledThreadPool(getNoOfAccountThreads());
-
-                MonitorExecutorService executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(getNoOfAccountThreads()));
+                executorService = new MonitorThreadPoolExecutor((ThreadPoolExecutor) Executors.newFixedThreadPool(getNoOfAccountThreads()));
 
 
                 List<FutureTask<AccountMetricStatistics>> tasks =
@@ -120,8 +117,8 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
                                 metricsProcessor.getNamespace()), e);
 
             } finally {
-                if (threadPool != null && !threadPool.isShutdown()) {
-                    threadPool.shutdown();
+                if (executorService != null && !executorService.isShutdown()) {
+                    executorService.shutdown();
                 }
             }
 

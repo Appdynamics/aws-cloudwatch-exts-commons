@@ -17,6 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
+import com.appdynamics.extensions.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
@@ -36,6 +37,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -45,6 +47,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.LongAdder;
 
 @RunWith(PowerMockRunner.class)
@@ -174,4 +179,72 @@ public class NamespaceMetricStatisticsCollectorTest {
         return accountStats;
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testThreadPoolShutdown() throws Exception {
+        List<Account> testAccounts = getTestAccounts();
+
+        when(mockMetricsProcessor.getNamespace()).thenReturn("TestNamespace");
+
+        AccountMetricStatisticsCollector mockAccountStatsCollector1 = mock(AccountMetricStatisticsCollector.class);
+        AccountMetricStatistics accountStats1 = createTestAccountMetricStatistics(testAccounts.get(0).getDisplayAccountName());
+        when(mockAccountStatsCollector1.call()).thenReturn(accountStats1);
+
+        AccountMetricStatisticsCollector mockAccountStatsCollector2 = mock(AccountMetricStatisticsCollector.class);
+        AccountMetricStatistics accountStats2 = createTestAccountMetricStatistics(testAccounts.get(1).getDisplayAccountName());
+        when(mockAccountStatsCollector2.call()).thenReturn(accountStats2);
+
+        // simulate account stats collector creation
+        AccountMetricStatisticsCollector.Builder mockBuilder = mock(AccountMetricStatisticsCollector.Builder.class);
+
+        whenNew(AccountMetricStatisticsCollector.Builder.class).withNoArguments().thenReturn(mockBuilder);
+
+        when(mockBuilder.withAccount(any(Account.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withMaxErrorRetrySize(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withMetricsProcessor(any(MetricsProcessor.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withNoOfMetricThreadsPerRegion(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withNoOfRegionThreadsPerAccount(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withThreadTimeOut(anyInt())).thenReturn(mockBuilder);
+        when(mockBuilder.withCredentialsDecryptionConfig(any(CredentialsDecryptionConfig.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withProxyConfig(any(ProxyConfig.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withRateLimiter(any(RateLimiter.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withAWSRequestCounter(any(LongAdder.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withPrefix(anyString())).thenReturn(mockBuilder);
+
+        when(mockBuilder.build()).thenReturn(mockAccountStatsCollector1, mockAccountStatsCollector2);
+
+        when(mockMetricsConfig.getGetMetricStatisticsRateLimit()).thenReturn(400);
+
+        ArgumentCaptor<NamespaceMetricStatistics> argumentCaptor =
+                ArgumentCaptor.forClass(NamespaceMetricStatistics.class);
+
+        List<com.appdynamics.extensions.metrics.Metric> mockMap = mock(List.class);
+        when(mockMetricsProcessor.createMetricStatsMapForUpload(argumentCaptor.capture())).thenReturn(mockMap);
+
+        classUnderTest = new NamespaceMetricStatisticsCollector.Builder(testAccounts,
+                mockConcurrencyConfig,
+                mockMetricsConfig,
+                mockMetricsProcessor, "Test|Prefix")
+                .build();
+
+
+        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
+        MonitorThreadPoolExecutor executorService = new MonitorThreadPoolExecutor(threadPoolExecutor);
+
+        MonitorThreadPoolExecutor executorServiceSpy = Mockito.spy(executorService);
+
+        whenNew(MonitorThreadPoolExecutor.class).withArguments(any(ScheduledThreadPoolExecutor.class)).thenReturn(executorServiceSpy);
+
+        classUnderTest.call();
+
+        NamespaceMetricStatistics result = argumentCaptor.getValue();
+
+        verify(mockMetricsProcessor).createMetricStatsMapForUpload(isA(NamespaceMetricStatistics.class));
+        assertEquals(accountStats1, result.getAccountMetricStatisticsList().get(0));
+        assertEquals(accountStats2, result.getAccountMetricStatisticsList().get(1));
+
+        //Test if shutdown was called once on MonitorThreadPoolExecutor
+        verify(executorServiceSpy, Mockito.times(1)).shutdown();
+    }
 }
