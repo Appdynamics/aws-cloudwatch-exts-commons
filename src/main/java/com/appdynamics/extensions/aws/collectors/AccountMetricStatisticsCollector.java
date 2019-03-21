@@ -34,8 +34,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.LongAdder;
@@ -116,7 +117,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
             ClientConfiguration awsClientConfig = createAWSClientConfiguration(maxErrorRetrySize, proxyConfig);
 
-            executorService = new MonitorThreadPoolExecutor(new ScheduledThreadPoolExecutor(noOfRegionThreadsPerAccount));
+            executorService = new MonitorThreadPoolExecutor((ThreadPoolExecutor) Executors.newFixedThreadPool(noOfRegionThreadsPerAccount));
 
 
             List<FutureTask<RegionMetricStatistics>> tasks = createConcurrentRegionTasks(

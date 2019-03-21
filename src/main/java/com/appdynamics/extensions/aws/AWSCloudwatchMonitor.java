@@ -35,6 +35,8 @@ public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
     private Class<T> clazz;
     private T config;
 
+    private JobScheduleModule jobScheduleModule = new JobScheduleModule();
+
     public AWSCloudwatchMonitor(Class<T> clazz) {
         this.clazz = clazz;
     }
@@ -85,8 +87,6 @@ public abstract class AWSCloudwatchMonitor<T> extends ABaseMonitor {
 
         dynamicConfig.put("taskSchedule", taskScheduleMap);
 
-
-        JobScheduleModule jobScheduleModule = new JobScheduleModule();
         jobScheduleModule.initScheduledJob(dynamicConfig, monitorName, monitorJob);
 
         MonitorContextConfiguration contextConfiguration = getContextConfiguration();

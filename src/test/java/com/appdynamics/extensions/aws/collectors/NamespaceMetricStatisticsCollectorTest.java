@@ -47,7 +47,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.LongAdder;
 
 @RunWith(PowerMockRunner.class)
@@ -227,8 +229,8 @@ public class NamespaceMetricStatisticsCollectorTest {
                 .build();
 
 
-        ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(2);
-        MonitorThreadPoolExecutor executorService = new MonitorThreadPoolExecutor(scheduledThreadPoolExecutor);
+        ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
+        MonitorThreadPoolExecutor executorService = new MonitorThreadPoolExecutor(threadPoolExecutor);
 
         MonitorThreadPoolExecutor executorServiceSpy = Mockito.spy(executorService);
 
