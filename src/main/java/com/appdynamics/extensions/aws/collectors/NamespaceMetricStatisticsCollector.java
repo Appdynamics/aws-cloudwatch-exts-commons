@@ -10,8 +10,8 @@ package com.appdynamics.extensions.aws.collectors;
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
 import static com.appdynamics.extensions.aws.validators.Validator.validateNamespace;
 
-import com.appdynamics.extensions.MonitorExecutorService;
-import com.appdynamics.extensions.MonitorThreadPoolExecutor;
+import com.appdynamics.extensions.executorservice.MonitorExecutorService;
+import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;

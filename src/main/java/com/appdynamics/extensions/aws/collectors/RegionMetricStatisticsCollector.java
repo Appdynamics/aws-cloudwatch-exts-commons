@@ -12,11 +12,13 @@ import static com.appdynamics.extensions.aws.validators.Validator.validateRegion
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
+import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClient;
-import com.appdynamics.extensions.MonitorExecutorService;
-import com.appdynamics.extensions.MonitorThreadPoolExecutor;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
+import com.appdynamics.extensions.executorservice.MonitorExecutorService;
+import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
@@ -105,7 +107,6 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                     "Collecting RegionMetricStatistics for Namespace [%s] Account [%s] Region [%s]",
                     metricsProcessor.getNamespace(), accountName, region));
 
-            this.awsCloudWatch.setEndpoint(regionEndpointProvider.getEndpoint(region));
             List<AWSMetric> metrics = metricsProcessor.getMetrics(awsCloudWatch, accountName, awsRequestsCounter);
 
             regionMetricStats = new RegionMetricStatistics();
@@ -225,6 +226,8 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         private String metricPrefix;
 
+        private AWSClientCache awsClientCache = new AWSClientCache.Builder().build();
+
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
             return this;
@@ -247,11 +250,18 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         public Builder withAmazonCloudWatchConfig(AWSCredentials awsCredentials,
                                                   ClientConfiguration awsClientConfig) {
-            if (awsCredentials == null) {
-                LOGGER.info("Credentials not provided trying to use instance profile");
-                this.awsCloudWatch = new AmazonCloudWatchClient(new InstanceProfileCredentialsProvider(), awsClientConfig);
-            } else {
-                this.awsCloudWatch = new AmazonCloudWatchClient(awsCredentials, awsClientConfig);
+
+            AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration(RegionEndpointProvider.getInstance().getEndpoint(region), region);
+            if(awsClientCache.get(endpointConfiguration.getServiceEndpoint()) == null) {
+                if (awsCredentials == null) {
+                    this.awsCloudWatch = AmazonCloudWatchClientBuilder.standard().withCredentials(InstanceProfileCredentialsProvider.getInstance()).withClientConfiguration(awsClientConfig).build();
+                } else {
+                    AWSStaticCredentialsProvider awsCredentialsProvider = new AWSStaticCredentialsProvider(awsCredentials);
+                    this.awsCloudWatch = AmazonCloudWatchClientBuilder.standard().withCredentials(awsCredentialsProvider).withClientConfiguration(awsClientConfig).withEndpointConfiguration(endpointConfiguration).build();
+                }
+                awsClientCache.put(endpointConfiguration.getServiceEndpoint() , awsCloudWatch);
+            }else{
+                this.awsCloudWatch = awsClientCache.get(endpointConfiguration.getServiceEndpoint());
             }
             return this;
         }

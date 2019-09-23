@@ -15,8 +15,8 @@ import static com.appdynamics.extensions.aws.validators.Validator.validateAccoun
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
-import com.appdynamics.extensions.MonitorExecutorService;
-import com.appdynamics.extensions.MonitorThreadPoolExecutor;
+import com.appdynamics.extensions.executorservice.MonitorExecutorService;
+import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
@@ -153,7 +153,6 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
             RegionMetricStatisticsCollector regionTask =
                     new RegionMetricStatisticsCollector.Builder()
                             .withAccountName(account.getDisplayAccountName())
-                            .withAmazonCloudWatchConfig(awsCredentials, awsClientConfig)
                             .withMetricsProcessor(metricsProcessor)
                             .withMetricsTimeRange(metricsTimeRange)
                             .withNoOfMetricThreadsPerRegion(noOfMetricThreadsPerRegion)
@@ -162,6 +161,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
                             .withRateLimiter(rateLimiter)
                             .withAWSRequestCounter(awsRequestsCounter)
                             .withPrefix(metricPrefix)
+                            .withAmazonCloudWatchConfig(awsCredentials, awsClientConfig)
                             .build();
 
             FutureTask<RegionMetricStatistics> regionTaskExecutor = new FutureTask<RegionMetricStatistics>(regionTask);
