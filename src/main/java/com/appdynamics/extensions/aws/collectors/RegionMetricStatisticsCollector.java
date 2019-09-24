@@ -226,7 +226,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         private String metricPrefix;
 
-        private AWSClientCache awsClientCache = new AWSClientCache.Builder().build();
+        private AWSClientCache awsClientCache = AWSClientCache.getInstance();
 
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;

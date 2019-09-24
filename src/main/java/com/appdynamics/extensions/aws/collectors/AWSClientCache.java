@@ -1,15 +1,16 @@
 package com.appdynamics.extensions.aws.collectors;
 
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @author Akshay Srivastava
  */
 public class AWSClientCache {
+
+    private static AWSClientCache instance;
 
     private final Cache<String, AmazonCloudWatch> cloudwatchClientCache;
 
@@ -25,13 +26,12 @@ public class AWSClientCache {
         return cloudwatchClientCache.getIfPresent(regionInfo);
     }
 
-    static class Builder {
-
-        AWSClientCache build() {
-            AWSClientCache cache = new AWSClientCache();
-            return cache;
+    public static AWSClientCache getInstance() {
+        if (instance == null) {
+            instance = new AWSClientCache();
         }
 
+        return instance;
     }
 
 }
