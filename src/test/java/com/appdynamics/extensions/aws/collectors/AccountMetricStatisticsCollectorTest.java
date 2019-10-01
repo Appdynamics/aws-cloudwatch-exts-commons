@@ -18,7 +18,7 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
-import com.appdynamics.extensions.MonitorThreadPoolExecutor;
+import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
