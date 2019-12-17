@@ -159,4 +159,30 @@ public class MultiDimensionPredicateTest {
         Assert.assertFalse(classUnderTest.apply(metric));
     }
 
+    @Test
+    public void testIncludeDimensionsMatchPattern() {
+
+        com.appdynamics.extensions.aws.config.Dimension dimension1 = new com.appdynamics.extensions.aws.config.Dimension();
+        dimension1.setName("LoadBalancerName");
+        dimension1.setValues(Sets.newHashSet(".*"));
+
+        com.appdynamics.extensions.aws.config.Dimension dimension2 = new com.appdynamics.extensions.aws.config.Dimension();
+        dimension2.setName("TargetGroup");
+        dimension2.setValues(Sets.newHashSet("targetgroup/toolsappdynamicscom.*"));
+
+        List<com.appdynamics.extensions.aws.config.Dimension> dimensions = Lists.newArrayList(dimension1, dimension2);
+
+        MultiDimensionPredicate classUnderTest = new MultiDimensionPredicate(dimensions);
+
+        when(metric.getDimensions()).thenReturn(Lists.newArrayList(awsDimension));
+        when(awsDimension.getName()).thenReturn("TargetGroup");
+        when(awsDimension.getValue()).thenReturn("targetgroup/toolsappdynamicscom/abcd");
+        Assert.assertTrue(classUnderTest.apply(metric));
+
+        when(metric.getDimensions()).thenReturn(Lists.newArrayList(awsDimension));
+        when(awsDimension.getName()).thenReturn("TargetGroup");
+        when(awsDimension.getValue()).thenReturn("targetgroup/testappd/abcd");
+        Assert.assertFalse(classUnderTest.apply(metric));
+    }
+
 }
