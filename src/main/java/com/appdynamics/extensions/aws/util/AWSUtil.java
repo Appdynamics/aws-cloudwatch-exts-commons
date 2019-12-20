@@ -7,16 +7,14 @@
 
 package com.appdynamics.extensions.aws.util;
 
-import static com.appdynamics.extensions.TaskInputArgs.ENCRYPTED_PASSWORD;
-import static com.appdynamics.extensions.TaskInputArgs.ENCRYPTION_KEY;
-
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.appdynamics.extensions.Constants;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
 import com.appdynamics.extensions.aws.config.ProxyConfig;
-import com.appdynamics.extensions.crypto.CryptoUtil;
+import com.appdynamics.extensions.util.CryptoUtils;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 
@@ -58,9 +56,9 @@ public class AWSUtil {
 
     private static String getDecryptedPassword(String encryptedPassword, String encryptionKey) {
         Map<String, String> cryptoMap = Maps.newHashMap();
-        cryptoMap.put(ENCRYPTED_PASSWORD, encryptedPassword);
-        cryptoMap.put(ENCRYPTION_KEY, encryptionKey);
-        return CryptoUtil.getPassword(cryptoMap);
+        cryptoMap.put(Constants.ENCRYPTED_PASSWORD, encryptedPassword);
+        cryptoMap.put(Constants.ENCRYPTION_KEY, encryptionKey);
+        return CryptoUtils.getPassword(cryptoMap);
     }
 
     public static ClientConfiguration createAWSClientConfiguration(int maxErrorRetrySize,

@@ -32,9 +32,9 @@ public class MultiDimensionPredicate implements Predicate<Metric> {
 
     private void build() {
         if (dimensions != null && !dimensions.isEmpty()) {
-            Predicate<CharSequence> patternPredicate = null;
 
             for (Dimension dimension : dimensions) {
+                Predicate<CharSequence> patternPredicate = null;
                 String dimensionName = dimension.getName();
                 Set<String> dimensionValues = dimension.getValues();
 

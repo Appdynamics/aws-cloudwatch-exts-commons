@@ -25,7 +25,7 @@ public class IncludeMetric {
 
     private String clusterRollUpType;
 
-    private double multiplier;
+    private double multiplier = 1.0;
 
     private boolean delta;
 

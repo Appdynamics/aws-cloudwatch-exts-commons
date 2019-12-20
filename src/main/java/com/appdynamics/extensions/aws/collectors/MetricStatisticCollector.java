@@ -40,8 +40,7 @@ import java.util.concurrent.atomic.LongAdder;
  * whereas the maximum number of data points returned from a single
  * GetMetricStatistics request is 1,440.
  * <p>
- * <p>see {@link http://docs.aws.amazon.com/AmazonCloudWatch/latest/APIReference/API_GetMetricStatistics.html}
- *
+ * <p>
  * @author Florencio Sarmiento
  */
 public class MetricStatisticCollector implements Callable<MetricStatistic> {
