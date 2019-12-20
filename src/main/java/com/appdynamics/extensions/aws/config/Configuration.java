@@ -7,6 +7,8 @@
 
 package com.appdynamics.extensions.aws.config;
 
+import com.appdynamics.extensions.controller.ControllerInfo;
+
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +42,8 @@ public class Configuration {
     public List<Account> getAccounts() {
         return accounts;
     }
+
+    private ControllerInfo controllerInfo;
 
     public void setAccounts(List<Account> accounts) {
         this.accounts = accounts;
@@ -144,5 +148,13 @@ public class Configuration {
 
     public void setDimensions(List<Dimension> dimensions) {
         this.dimensions = dimensions;
+    }
+
+    public ControllerInfo getControllerInfo() {
+        return controllerInfo;
+    }
+
+    public void setControllerInfo(ControllerInfo controllerInfo) {
+        this.controllerInfo = controllerInfo;
     }
 }
