@@ -60,18 +60,18 @@ public class NamespaceMetricStatisticsCollectorTest {
 
     private NamespaceMetricStatisticsCollector classUnderTest;
 
-    @Mock
-    private MetricsProcessor mockMetricsProcessor;
-
-    @Mock
-    private MetricsConfig mockMetricsConfig;
-
-    @Mock
-    private ConcurrencyConfig mockConcurrencyConfig;
-
     @SuppressWarnings("unchecked")
     @Test
     public void testMetricsRetrievalIsSuccessful() throws Exception {
+
+
+        MetricsProcessor mockMetricsProcessor = Mockito.mock(MetricsProcessor.class);
+
+        MetricsConfig mockMetricsConfig = Mockito.mock(MetricsConfig.class);
+
+        ConcurrencyConfig mockConcurrencyConfig = Mockito.mock(ConcurrencyConfig.class);
+
+
         List<Account> testAccounts = getTestAccounts();
 
         when(mockMetricsProcessor.getNamespace()).thenReturn("TestNamespace");
@@ -182,6 +182,13 @@ public class NamespaceMetricStatisticsCollectorTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testThreadPoolShutdown() throws Exception {
+
+        MetricsProcessor mockMetricsProcessor = Mockito.mock(MetricsProcessor.class);
+
+        MetricsConfig mockMetricsConfig = Mockito.mock(MetricsConfig.class);
+
+        ConcurrencyConfig mockConcurrencyConfig = Mockito.mock(ConcurrencyConfig.class);
+
         List<Account> testAccounts = getTestAccounts();
 
         when(mockMetricsProcessor.getNamespace()).thenReturn("TestNamespace");
@@ -189,10 +196,6 @@ public class NamespaceMetricStatisticsCollectorTest {
         AccountMetricStatisticsCollector mockAccountStatsCollector1 = mock(AccountMetricStatisticsCollector.class);
         AccountMetricStatistics accountStats1 = createTestAccountMetricStatistics(testAccounts.get(0).getDisplayAccountName());
         when(mockAccountStatsCollector1.call()).thenReturn(accountStats1);
-
-        AccountMetricStatisticsCollector mockAccountStatsCollector2 = mock(AccountMetricStatisticsCollector.class);
-        AccountMetricStatistics accountStats2 = createTestAccountMetricStatistics(testAccounts.get(1).getDisplayAccountName());
-        when(mockAccountStatsCollector2.call()).thenReturn(accountStats2);
 
         // simulate account stats collector creation
         AccountMetricStatisticsCollector.Builder mockBuilder = mock(AccountMetricStatisticsCollector.Builder.class);
@@ -212,7 +215,7 @@ public class NamespaceMetricStatisticsCollectorTest {
         when(mockBuilder.withAWSRequestCounter(any(LongAdder.class))).thenReturn(mockBuilder);
         when(mockBuilder.withPrefix(anyString())).thenReturn(mockBuilder);
 
-        when(mockBuilder.build()).thenReturn(mockAccountStatsCollector1, mockAccountStatsCollector2);
+        when(mockBuilder.build()).thenReturn(mockAccountStatsCollector1);
 
         when(mockMetricsConfig.getGetMetricStatisticsRateLimit()).thenReturn(400);
 
@@ -242,7 +245,6 @@ public class NamespaceMetricStatisticsCollectorTest {
 
         verify(mockMetricsProcessor).createMetricStatsMapForUpload(isA(NamespaceMetricStatistics.class));
         assertEquals(accountStats1, result.getAccountMetricStatisticsList().get(0));
-        assertEquals(accountStats2, result.getAccountMetricStatisticsList().get(1));
 
         //Test if shutdown was called once on MonitorThreadPoolExecutor
         verify(executorServiceSpy, Mockito.times(1)).shutdown();
