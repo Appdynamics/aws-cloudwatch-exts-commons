@@ -8,6 +8,7 @@
 package com.appdynamics.extensions.aws.config;
 
 import com.appdynamics.extensions.controller.ControllerInfo;
+import com.appdynamics.extensions.metrics.MetricCharSequenceReplacer;
 
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,10 @@ public class Configuration {
     public CredentialsDecryptionConfig getCredentialsDecryptionConfig() {
         return credentialsDecryptionConfig;
     }
+
+    private Boolean enableHealthChecks;
+
+    private MetricCharSequenceReplacer metricCharSequenceReplacer;
 
     public void setCredentialsDecryptionConfig(
             CredentialsDecryptionConfig credentialsDecryptionConfig) {
@@ -156,5 +161,21 @@ public class Configuration {
 
     public void setControllerInfo(ControllerInfo controllerInfo) {
         this.controllerInfo = controllerInfo;
+    }
+
+    public Boolean getEnableHealthChecks() {
+        return enableHealthChecks;
+    }
+
+    public void setEnableHealthChecks(Boolean enableHealthChecks) {
+        this.enableHealthChecks = enableHealthChecks;
+    }
+
+    public MetricCharSequenceReplacer getMetricCharSequenceReplacer() {
+        return metricCharSequenceReplacer;
+    }
+
+    public void setMetricCharSequenceReplacer(MetricCharSequenceReplacer metricCharSequenceReplacer) {
+        this.metricCharSequenceReplacer = metricCharSequenceReplacer;
     }
 }
