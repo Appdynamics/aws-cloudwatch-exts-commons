@@ -7,57 +7,56 @@
 
 package com.appdynamics.extensions.aws.config;
 
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
  * @author Florencio Sarmiento
- *
  */
 public class ProxyConfig {
 
-	private String host;
-	
-	private Integer port;
-	
-	private String username;
-	
-	private String password;
+    private String host;
 
-	public String getHost() {
-		return host;
-	}
+    private Integer port;
 
-	public void setHost(String host) {
-		this.host = host;
-	}
+    private String username;
 
-	public Integer getPort() {
-		return port;
-	}
+    private String password;
 
-	public void setPort(Integer port) {
-		this.port = port;
-	}
+    public String getHost() {
+        return host;
+    }
 
-	public String getUsername() {
-		return username;
-	}
+    public void setHost(String host) {
+        this.host = host;
+    }
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
+    public Integer getPort() {
+        return port;
+    }
 
-	public String getPassword() {
-		return password;
-	}
+    public void setPort(Integer port) {
+        this.port = port;
+    }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
-	
-	@Override
-	public String toString() {
-		return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
-	}
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+    }
 }

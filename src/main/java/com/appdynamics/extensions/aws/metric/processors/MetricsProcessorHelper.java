@@ -7,8 +7,6 @@
 
 package com.appdynamics.extensions.aws.metric.processors;
 
-import static com.appdynamics.extensions.aws.Constants.METRIC_PATH_SEPARATOR;
-
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.model.Dimension;
 import com.amazonaws.services.cloudwatch.model.DimensionFilter;
@@ -22,11 +20,12 @@ import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.StatisticType;
+import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,6 +36,8 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.appdynamics.extensions.aws.Constants.METRIC_PATH_SEPARATOR;
+
 /**
  * Provides default behaviour and other utility methods
  * that can used by concrete class of {@link MetricsProcessor}
@@ -45,7 +46,7 @@ import java.util.regex.Pattern;
  */
 public class MetricsProcessorHelper {
 
-    private static Logger LOGGER = Logger.getLogger(MetricsProcessorHelper.class);
+    private static Logger LOGGER = ExtensionsLoggerFactory.getLogger(MetricsProcessorHelper.class);
 
 
     public static List<AWSMetric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,

@@ -7,7 +7,8 @@
 
 package com.appdynamics.extensions.aws.providers;
 
-import org.apache.log4j.Logger;
+import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
+import org.slf4j.Logger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,7 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class RegionEndpointProvider {
 
-    private static Logger LOGGER = Logger.getLogger(RegionEndpointProvider.class);
+    private static Logger LOGGER = ExtensionsLoggerFactory.getLogger(RegionEndpointProvider.class);
 
     private final Map<String, String> regionEndpoints = new ConcurrentHashMap<String, String>();
 

@@ -7,16 +7,8 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_MAX_ERROR_RETRY;
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSClientConfiguration;
-import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSCredentials;
-import static com.appdynamics.extensions.aws.validators.Validator.validateAccount;
-
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
-import com.appdynamics.extensions.executorservice.MonitorExecutorService;
-import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
@@ -25,10 +17,13 @@ import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
+import com.appdynamics.extensions.executorservice.MonitorExecutorService;
+import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
+import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Set;
@@ -41,6 +36,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.LongAdder;
 
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_MAX_ERROR_RETRY;
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
+import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSClientConfiguration;
+import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSCredentials;
+import static com.appdynamics.extensions.aws.validators.Validator.validateAccount;
+
 /**
  * Collects statistics (of specified regions) for specified account
  *
@@ -48,7 +49,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class AccountMetricStatisticsCollector implements Callable<AccountMetricStatistics> {
 
-    private static Logger LOGGER = Logger.getLogger(AccountMetricStatisticsCollector.class);
+    private static Logger LOGGER = ExtensionsLoggerFactory.getLogger(AccountMetricStatisticsCollector.class);
 
     private Account account;
 

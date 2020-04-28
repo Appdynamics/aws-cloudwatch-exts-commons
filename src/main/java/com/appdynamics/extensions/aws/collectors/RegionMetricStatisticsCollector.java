@@ -7,9 +7,6 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.validators.Validator.validateRegion;
-
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -17,8 +14,6 @@ import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
-import com.appdynamics.extensions.executorservice.MonitorExecutorService;
-import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
@@ -26,10 +21,13 @@ import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
 import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;
+import com.appdynamics.extensions.executorservice.MonitorExecutorService;
+import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
+import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
-import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -41,6 +39,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.LongAdder;
 
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
+import static com.appdynamics.extensions.aws.validators.Validator.validateRegion;
+
 /**
  * Collects statistics (of specified metrics) for specified region.
  *
@@ -48,7 +49,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class RegionMetricStatisticsCollector implements Callable<RegionMetricStatistics> {
 
-    private static Logger LOGGER = Logger.getLogger(RegionMetricStatisticsCollector.class);
+    private static Logger LOGGER = ExtensionsLoggerFactory.getLogger(RegionMetricStatisticsCollector.class);
 
     private String accountName;
 
@@ -253,7 +254,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
             AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration(RegionEndpointProvider.getInstance().getEndpoint(region), region);
             AmazonCloudWatch amazonCloudWatch = awsClientCache.get(endpointConfiguration.getServiceEndpoint());
-            if(amazonCloudWatch == null) {
+            if (amazonCloudWatch == null) {
                 LOGGER.info("CloudWatch object does not exists in cache, creating and adding it to cache.");
                 if (awsCredentials == null) {
                     this.awsCloudWatch = AmazonCloudWatchClientBuilder.standard().withCredentials(InstanceProfileCredentialsProvider.getInstance()).withClientConfiguration(awsClientConfig).build();
@@ -263,8 +264,8 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                     this.awsCloudWatch = AmazonCloudWatchClientBuilder.standard().withCredentials(awsCredentialsProvider).withClientConfiguration(awsClientConfig).withEndpointConfiguration(endpointConfiguration).build();
                     LOGGER.info("Credentials not provided trying to use instance profile credentials");
                 }
-                awsClientCache.put(endpointConfiguration.getServiceEndpoint() , awsCloudWatch);
-            }else{
+                awsClientCache.put(endpointConfiguration.getServiceEndpoint(), awsCloudWatch);
+            } else {
                 this.awsCloudWatch = awsClientCache.get(endpointConfiguration.getServiceEndpoint());
             }
             return this;

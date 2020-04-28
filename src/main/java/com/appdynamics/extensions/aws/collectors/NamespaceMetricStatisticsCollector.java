@@ -7,11 +7,6 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.validators.Validator.validateNamespace;
-
-import com.appdynamics.extensions.executorservice.MonitorExecutorService;
-import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
@@ -21,11 +16,14 @@ import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
+import com.appdynamics.extensions.executorservice.MonitorExecutorService;
+import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
+import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.appdynamics.extensions.metrics.Metric;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import com.singularity.ee.agent.systemagent.api.MetricWriter;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -38,6 +36,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.LongAdder;
 
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
+import static com.appdynamics.extensions.aws.validators.Validator.validateNamespace;
+
 /**
  * Collects statistics (of all specified accounts) for specified namespace
  *
@@ -45,7 +46,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>> {
 
-    private static Logger LOGGER = Logger.getLogger(NamespaceMetricStatisticsCollector.class);
+    private static Logger LOGGER = ExtensionsLoggerFactory.getLogger(NamespaceMetricStatisticsCollector.class);
 
     private List<Account> accounts;
 
