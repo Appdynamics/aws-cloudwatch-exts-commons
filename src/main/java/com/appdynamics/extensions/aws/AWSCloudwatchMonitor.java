@@ -16,7 +16,7 @@ import com.appdynamics.extensions.conf.MonitorContext;
 import com.appdynamics.extensions.conf.MonitorContextConfiguration;
 import com.appdynamics.extensions.conf.modules.JobScheduleModule;
 import com.appdynamics.extensions.metrics.Metric;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.File;

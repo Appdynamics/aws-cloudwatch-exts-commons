@@ -7,11 +7,6 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_END_TIME_IN_MINS_BEFORE_NOW;
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_METRIC_PERIOD_IN_SEC;
-import static com.appdynamics.extensions.aws.Constants.DEFAULT_START_TIME_IN_MINS_BEFORE_NOW;
-import static com.appdynamics.extensions.aws.validators.Validator.validateTimeRange;
-
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.amazonaws.services.cloudwatch.model.Datapoint;
 import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
@@ -21,9 +16,10 @@ import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.StatisticType;
-import org.apache.log4j.Logger;
+import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -31,6 +27,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.LongAdder;
+
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_END_TIME_IN_MINS_BEFORE_NOW;
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_METRIC_PERIOD_IN_SEC;
+import static com.appdynamics.extensions.aws.Constants.DEFAULT_START_TIME_IN_MINS_BEFORE_NOW;
+import static com.appdynamics.extensions.aws.validators.Validator.validateTimeRange;
 
 /**
  * Retrieves statistics for the specified metric.
@@ -41,11 +42,12 @@ import java.util.concurrent.atomic.LongAdder;
  * GetMetricStatistics request is 1,440.
  * <p>
  * <p>
+ *
  * @author Florencio Sarmiento
  */
 public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
-    private static Logger LOGGER = Logger.getLogger(MetricStatisticCollector.class);
+    private static Logger LOGGER = ExtensionsLoggerFactory.getLogger(MetricStatisticCollector.class);
 
     private String accountName;
 

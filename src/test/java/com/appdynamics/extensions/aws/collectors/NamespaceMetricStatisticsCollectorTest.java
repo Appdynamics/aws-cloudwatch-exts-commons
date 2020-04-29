@@ -7,17 +7,6 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.isA;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.whenNew;
-
-import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.ConcurrencyConfig;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
@@ -31,12 +20,12 @@ import com.appdynamics.extensions.aws.metric.MetricStatistic;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
+import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -51,6 +40,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.LongAdder;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({NamespaceMetricStatisticsCollector.class,

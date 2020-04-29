@@ -7,50 +7,50 @@
 
 package com.appdynamics.extensions.aws.metric;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 
 /**
  * @author Florencio Sarmiento
- *
  */
 public enum StatisticType {
-	
-	AVE("Average"),
-	MAX("Maximum"),
-	MIN("Minimum"),
-	SUM("Sum"),
-	SAMPLE_COUNT("SampleCount");
-	
-	private static Logger LOGGER = Logger.getLogger(StatisticType.class);
-	
-	private String typeName;
-	
-	StatisticType(String typeName) {
-		this.typeName = typeName;
-	}
-	
-	public String getTypeName() {
-		return typeName;
-	}
 
-	public static StatisticType fromString(String name) {
-		if (StringUtils.isNotBlank(name)) {
-			String trimmedName = name.trim();
-			
-			for (StatisticType type : StatisticType.values()) {
-				if (type.name().equalsIgnoreCase(trimmedName) || 
-						type.typeName.equalsIgnoreCase(trimmedName)) {
-					return type;
-				}
-			}
-		}
-		
-		if (LOGGER.isDebugEnabled()) {
-			LOGGER.debug(String.format("Invalid aws statistic type provided [%s], defaulting to [%s]", 
-					name, AVE.name()));
-		}
-		
-		return AVE;
-	}
+    AVE("Average"),
+    MAX("Maximum"),
+    MIN("Minimum"),
+    SUM("Sum"),
+    SAMPLE_COUNT("SampleCount");
+
+    private static Logger LOGGER = ExtensionsLoggerFactory.getLogger(StatisticType.class);
+
+    private String typeName;
+
+    StatisticType(String typeName) {
+        this.typeName = typeName;
+    }
+
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public static StatisticType fromString(String name) {
+        if (StringUtils.isNotBlank(name)) {
+            String trimmedName = name.trim();
+
+            for (StatisticType type : StatisticType.values()) {
+                if (type.name().equalsIgnoreCase(trimmedName) ||
+                        type.typeName.equalsIgnoreCase(trimmedName)) {
+                    return type;
+                }
+            }
+        }
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug(String.format("Invalid aws statistic type provided [%s], defaulting to [%s]",
+                    name, AVE.name()));
+        }
+
+        return AVE;
+    }
 }

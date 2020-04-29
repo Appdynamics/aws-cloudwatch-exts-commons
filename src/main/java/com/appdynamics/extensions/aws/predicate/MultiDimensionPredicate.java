@@ -2,9 +2,10 @@ package com.appdynamics.extensions.aws.predicate;
 
 import com.amazonaws.services.cloudwatch.model.Metric;
 import com.appdynamics.extensions.aws.config.Dimension;
+import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.Set;
  */
 public class MultiDimensionPredicate implements Predicate<Metric> {
 
-    private static final Logger LOGGER = Logger.getLogger(MultiDimensionPredicate.class);
+    private static final Logger LOGGER = ExtensionsLoggerFactory.getLogger(MultiDimensionPredicate.class);
 
 
     private List<Dimension> dimensions;

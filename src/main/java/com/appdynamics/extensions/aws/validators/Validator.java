@@ -1,6 +1,6 @@
 package com.appdynamics.extensions.aws.validators;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.providers.RegionEndpointProvider;

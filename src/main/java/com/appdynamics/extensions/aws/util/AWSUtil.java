@@ -16,7 +16,7 @@ import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
 import com.appdynamics.extensions.aws.config.ProxyConfig;
 import com.appdynamics.extensions.util.CryptoUtils;
 import com.google.common.collect.Maps;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 
