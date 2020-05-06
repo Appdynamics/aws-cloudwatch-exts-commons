@@ -56,6 +56,8 @@ public class Configuration {
 
     private Boolean enableHealthChecks;
 
+    private String encryptionKey;
+
     private MetricCharSequenceReplacer metricCharSequenceReplacer;
 
     public void setCredentialsDecryptionConfig(
@@ -177,5 +179,13 @@ public class Configuration {
 
     public void setMetricCharSequenceReplacer(MetricCharSequenceReplacer metricCharSequenceReplacer) {
         this.metricCharSequenceReplacer = metricCharSequenceReplacer;
+    }
+
+    public String getEncryptionKey() {
+        return encryptionKey;
+    }
+
+    public void setEncryptionKey(String encryptionKey) {
+        this.encryptionKey = encryptionKey;
     }
 }
