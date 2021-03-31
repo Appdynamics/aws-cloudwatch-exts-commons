@@ -257,12 +257,13 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
             if (amazonCloudWatch == null) {
                 LOGGER.info("CloudWatch object does not exists in cache, creating and adding it to cache.");
                 if (awsCredentials == null) {
-                    this.awsCloudWatch = AmazonCloudWatchClientBuilder.standard().withCredentials(InstanceProfileCredentialsProvider.getInstance()).withClientConfiguration(awsClientConfig).build();
+                    this.awsCloudWatch = AmazonCloudWatchClientBuilder.standard().withCredentials(InstanceProfileCredentialsProvider.getInstance()).withClientConfiguration(awsClientConfig).withEndpointConfiguration(endpointConfiguration).build();
                     LOGGER.info("Credentials not provided trying to use instance profile credentials");
                 } else {
                     AWSStaticCredentialsProvider awsCredentialsProvider = new AWSStaticCredentialsProvider(awsCredentials);
                     this.awsCloudWatch = AmazonCloudWatchClientBuilder.standard().withCredentials(awsCredentialsProvider).withClientConfiguration(awsClientConfig).withEndpointConfiguration(endpointConfiguration).build();
-                    LOGGER.info("Credentials not provided trying to use instance profile credentials");
+                    //LOGGER.info("Credentials not provided trying to use instance profile credentials");
+                    LOGGER.info("Credentials are provided. Trying to use access key and secret key");
                 }
                 awsClientCache.put(endpointConfiguration.getServiceEndpoint(), awsCloudWatch);
             } else {
