@@ -10,8 +10,6 @@ package com.appdynamics.extensions.aws.metric.processors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import com.amazonaws.services.cloudwatch.model.Dimension;
-import com.amazonaws.services.cloudwatch.model.Metric;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
@@ -22,6 +20,8 @@ import com.appdynamics.extensions.aws.metric.StatisticType;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.junit.Test;
+import software.amazon.awssdk.services.cloudwatch.model.Dimension;
+import software.amazon.awssdk.services.cloudwatch.model.Metric;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,14 +74,9 @@ public class MetricsProcessorHelperTest {
 
         includeMetrics.add(includeMetric);
 
-        Metric metric1 = new Metric();
-        metric1.setMetricName("metricToKeep");
-
-        Metric metric2 = new Metric();
-        metric2.setMetricName("metricToRemove");
-
-        Metric metric3 = new Metric();
-        metric3.setMetricName("metricUnwanted");
+        Metric metric1 = Metric.builder().metricName("metricToKeep").build();
+        Metric metric2 = Metric.builder().metricName("metricToRemove").build();
+        Metric metric3 = Metric.builder().metricName("metricUnwanted").build();
 
         List<Metric> testMetrics = Lists.newArrayList(metric1, metric2, metric3);
 
@@ -154,12 +149,8 @@ public class MetricsProcessorHelperTest {
                     IncludeMetric includeMetric = new IncludeMetric();
                     includeMetric.setName("testMetric" + metricIndex);
 
-                    Dimension dimension = new Dimension();
-                    dimension.setName("testDimesionName");
-                    dimension.setValue("testDimesionValue");
-
-                    Metric metric = new Metric();
-                    metric.setDimensions(Lists.newArrayList(dimension));
+                    Dimension dimension = Dimension.builder().name("testDimesionName").value("testDimesionValue").build();
+                    Metric metric = Metric.builder().dimensions(Lists.newArrayList(dimension)).build();
 
                     AWSMetric awsMetric = new AWSMetric();
                     awsMetric.setIncludeMetric(includeMetric);
