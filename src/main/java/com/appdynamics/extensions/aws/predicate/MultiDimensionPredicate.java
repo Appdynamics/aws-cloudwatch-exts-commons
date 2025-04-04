@@ -1,11 +1,11 @@
 package com.appdynamics.extensions.aws.predicate;
 
-import com.amazonaws.services.cloudwatch.model.Metric;
 import com.appdynamics.extensions.aws.config.Dimension;
 import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import org.slf4j.Logger;
+import software.amazon.awssdk.services.cloudwatch.model.Metric;
 
 import java.util.HashMap;
 import java.util.List;
@@ -59,12 +59,12 @@ public class MultiDimensionPredicate implements Predicate<Metric> {
 
     public boolean apply(Metric metric) {
 
-        List<com.amazonaws.services.cloudwatch.model.Dimension> dimensions = metric.getDimensions();
+        List<software.amazon.awssdk.services.cloudwatch.model.Dimension> dimensions = metric.dimensions();
 
         boolean result = false;
-        for (com.amazonaws.services.cloudwatch.model.Dimension dimension : dimensions) {
-            String name = dimension.getName();
-            String value = dimension.getValue();
+        for (software.amazon.awssdk.services.cloudwatch.model.Dimension dimension : dimensions) {
+            String name = dimension.name();
+            String value = dimension.value();
             Predicate<CharSequence> predicate = allPredicates.get(name);
             if (predicate != null) {
                 result = predicate.apply(value);

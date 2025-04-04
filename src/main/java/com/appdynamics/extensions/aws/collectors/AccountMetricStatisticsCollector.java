@@ -7,9 +7,8 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
 import com.appdynamics.extensions.aws.config.Account;
+import com.appdynamics.extensions.aws.config.AwsClientConfig;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.config.ProxyConfig;
@@ -17,6 +16,7 @@ import com.appdynamics.extensions.aws.exceptions.AwsException;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
 import com.appdynamics.extensions.aws.metric.RegionMetricStatistics;
 import com.appdynamics.extensions.aws.metric.processors.MetricsProcessor;
+import com.appdynamics.extensions.aws.util.AWSUtil;
 import com.appdynamics.extensions.executorservice.MonitorExecutorService;
 import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
@@ -24,6 +24,10 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+
 
 import java.util.List;
 import java.util.Set;
@@ -38,7 +42,6 @@ import java.util.concurrent.atomic.LongAdder;
 
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_MAX_ERROR_RETRY;
 import static com.appdynamics.extensions.aws.Constants.DEFAULT_NO_OF_THREADS;
-import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSClientConfiguration;
 import static com.appdynamics.extensions.aws.util.AWSUtil.createAWSCredentials;
 import static com.appdynamics.extensions.aws.validators.Validator.validateAccount;
 
@@ -111,12 +114,12 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
             accountStats = new AccountMetricStatistics();
             accountStats.setAccountName(account.getDisplayAccountName());
 
-            AWSCredentials awsCredentials = null;
+            StaticCredentialsProvider awsCredentials = null;
             if (StringUtils.isNotEmpty(account.getAwsAccessKey()) && StringUtils.isNotEmpty(account.getAwsSecretKey())) {
                 awsCredentials = createAWSCredentials(account, credentialsDecryptionConfig);
             }
 
-            ClientConfiguration awsClientConfig = createAWSClientConfiguration(maxErrorRetrySize, proxyConfig);
+            AwsClientConfig awsClientConfig = AWSUtil.createAwsClientConfiguration(maxErrorRetrySize, proxyConfig);
 
             executorService = new MonitorThreadPoolExecutor((ThreadPoolExecutor) Executors.newFixedThreadPool(noOfRegionThreadsPerAccount));
 
@@ -145,8 +148,8 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
     private List<FutureTask<RegionMetricStatistics>> createConcurrentRegionTasks(
             MonitorExecutorService executorService,
             Set<String> regions,
-            AWSCredentials awsCredentials,
-            ClientConfiguration awsClientConfig) {
+            StaticCredentialsProvider awsCredentials,
+            AwsClientConfig awsClientConfig) {
 
         List<FutureTask<RegionMetricStatistics>> futureTasks = Lists.newArrayList();
 

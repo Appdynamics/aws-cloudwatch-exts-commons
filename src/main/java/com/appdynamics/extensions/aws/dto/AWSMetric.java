@@ -7,7 +7,7 @@
 
 package com.appdynamics.extensions.aws.dto;
 
-import com.amazonaws.services.cloudwatch.model.Metric;
+import software.amazon.awssdk.services.cloudwatch.model.Metric;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 
 /**
