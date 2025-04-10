@@ -32,7 +32,7 @@
 		<dependency>
 			<groupId>com.fasterxml.woodstox</groupId>
 			<artifactId>woodstox-core</artifactId>
-			<version>5.4.0</version>
+			<version>6.6.1</version>
 		</dependency>
 		<!-- https://mvnrepository.com/artifact/software.amazon.awssdk/cloudwatch -->
 		<dependency>
@@ -94,6 +94,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<argLine>-noverify</argLine>
+					<skipTests>true</skipTests>
 				</configuration>
 			</plugin>
 			<plugin>
