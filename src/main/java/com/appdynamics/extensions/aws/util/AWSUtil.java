@@ -9,6 +9,7 @@ package com.appdynamics.extensions.aws.util;
 
 import com.appdynamics.extensions.aws.config.AwsClientConfig;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsSessionCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import com.appdynamics.extensions.Constants;
 import com.appdynamics.extensions.aws.config.Account;
@@ -48,14 +49,21 @@ public class AWSUtil {
                                                                  CredentialsDecryptionConfig credentialsDecryptionConfig) {
         String awsAccessKey = account.getAwsAccessKey();
         String awsSecretKey = account.getAwsSecretKey();
+        String awsSessionToken = account.getAwsSessionToken();
 
         if (credentialsDecryptionConfig != null &&
                 credentialsDecryptionConfig.isDecryptionEnabled()) {
             String encryptionKey = credentialsDecryptionConfig.getEncryptionKey();
             awsAccessKey = getDecryptedPassword(awsAccessKey, encryptionKey);
             awsSecretKey = getDecryptedPassword(awsSecretKey, encryptionKey);
+            if( awsSessionToken != null && !"".equals(awsSessionToken) )
+                awsSessionToken = getDecryptedPassword(awsSessionToken, encryptionKey);
         }
 
+        if( awsSessionToken != null && !"".equals(awsSessionToken) ) {
+            AwsSessionCredentials awsSessionCredentials = AwsSessionCredentials.create(awsAccessKey, awsSecretKey, awsSessionToken);
+            return StaticCredentialsProvider.create(awsSessionCredentials);
+        } // else fall through and send back the basic credentials
         AwsBasicCredentials credentials = AwsBasicCredentials.create(awsAccessKey, awsSecretKey);
         return StaticCredentialsProvider.create(credentials);
     }

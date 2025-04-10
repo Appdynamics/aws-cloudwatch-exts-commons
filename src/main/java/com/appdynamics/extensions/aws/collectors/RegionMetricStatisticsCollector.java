@@ -20,9 +20,7 @@ import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import java.net.URI;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -148,7 +146,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         List<FutureTask<MetricStatistic>> futureTasks = Lists.newArrayList();
 
-        long startTime = DateTime.now().getSecondOfMinute();
+        long startTime = System.currentTimeMillis();
         for (AWSMetric metric : metrics) {
 
             //Limit the number of requests per second. Limit can be configured using getMetricStatisticsRateLimit config
@@ -171,9 +169,9 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
             executorService.submit("RegionMetricStatisticsCollector", accountTaskExecutor);
             futureTasks.add(accountTaskExecutor);
         }
-        long elapsedTimeSeconds = DateTime.now().getSecondOfMinute() - startTime;
+        long elapsedTime = System.currentTimeMillis() - startTime;
 
-        LOGGER.debug("Get metric statistics took " + elapsedTimeSeconds);
+        LOGGER.debug("Get metric statistics took " + elapsedTime +"(ms)");
 
         return futureTasks;
     }
@@ -253,7 +251,8 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         public Builder withAmazonCloudWatchConfig(AwsCredentialsProvider awsCredentials, AwsClientConfig awsClientConfig) {
             // Derive the endpoint URI from your endpoint provider.
             String endpointUrl = RegionEndpointProvider.getInstance().getEndpoint(region);
-            URI endpointUri = URI.create(endpointUrl);
+            URI endpointUri = URI.create("https://" + endpointUrl);
+            LOGGER.debug(String.format("Endpoint URI: %s",endpointUri));
 
             // Retrieve a CloudWatchClient from the cache, keyed by the endpoint URI.
             CloudWatchClient cloudWatchClient = awsClientCache.get(endpointUri.toString());
