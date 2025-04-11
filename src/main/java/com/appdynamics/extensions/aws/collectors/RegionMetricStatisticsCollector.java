@@ -28,6 +28,7 @@ import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvide
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClientBuilder;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -272,7 +273,6 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                     clientBuilder.credentialsProvider(awsCredentials);
                     LOGGER.info("Credentials provided; using supplied AWS credentials provider.");
                 }
-
                 cloudWatchClient = clientBuilder.build();
                 awsClientCache.put(endpointUri, cloudWatchClient);
             } else {
