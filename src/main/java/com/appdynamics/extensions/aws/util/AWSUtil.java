@@ -60,7 +60,7 @@ public class AWSUtil {
                 awsSessionToken = getDecryptedPassword(awsSessionToken, encryptionKey);
         }
 
-        if( awsSessionToken != null && !"".equals(awsSessionToken) ) {
+        if( StringUtils.isNotEmpty(awsAccessKey) && StringUtils.isNotEmpty(awsSecretKey) && StringUtils.isNotEmpty(awsSessionToken) ) {
             AwsSessionCredentials awsSessionCredentials = AwsSessionCredentials.create(awsAccessKey, awsSecretKey, awsSessionToken);
             return StaticCredentialsProvider.create(awsSessionCredentials);
         } // else fall through and send back the basic credentials

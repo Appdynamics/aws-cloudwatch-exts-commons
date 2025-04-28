@@ -267,8 +267,8 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                         .overrideConfiguration(awsClientConfig.getOverrideConfiguration());
 
                 if (awsCredentials == null) {
-                    clientBuilder.credentialsProvider(InstanceProfileCredentialsProvider.create());
-                    LOGGER.info("No credentials provided; using instance profile credentials.");
+                    //clientBuilder.credentialsProvider(InstanceProfileCredentialsProvider.create());
+                    LOGGER.info("No credentials provided; using default credentials provider.");
                 } else {
                     clientBuilder.credentialsProvider(awsCredentials);
                     LOGGER.info("Credentials provided; using supplied AWS credentials provider.");
