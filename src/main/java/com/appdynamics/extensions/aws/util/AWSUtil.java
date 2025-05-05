@@ -56,7 +56,7 @@ public class AWSUtil {
             String encryptionKey = credentialsDecryptionConfig.getEncryptionKey();
             awsAccessKey = getDecryptedPassword(awsAccessKey, encryptionKey);
             awsSecretKey = getDecryptedPassword(awsSecretKey, encryptionKey);
-            if( awsSessionToken != null && !"".equals(awsSessionToken) )
+            if( StringUtils.isNotEmpty(awsSessionToken) )
                 awsSessionToken = getDecryptedPassword(awsSessionToken, encryptionKey);
         }
 
@@ -64,8 +64,11 @@ public class AWSUtil {
             AwsSessionCredentials awsSessionCredentials = AwsSessionCredentials.create(awsAccessKey, awsSecretKey, awsSessionToken);
             return StaticCredentialsProvider.create(awsSessionCredentials);
         } // else fall through and send back the basic credentials
-        AwsBasicCredentials credentials = AwsBasicCredentials.create(awsAccessKey, awsSecretKey);
-        return StaticCredentialsProvider.create(credentials);
+        if( StringUtils.isNotEmpty(awsAccessKey) && StringUtils.isNotEmpty(awsSecretKey) ) {
+            AwsBasicCredentials credentials = AwsBasicCredentials.create(awsAccessKey, awsSecretKey);
+            return StaticCredentialsProvider.create(credentials);
+        } // else return null, and don't use credentials, which will fall back to instance credentials
+        return null;
     }
 
     private static String getDecryptedPassword(String encryptedPassword, String encryptionKey) {
