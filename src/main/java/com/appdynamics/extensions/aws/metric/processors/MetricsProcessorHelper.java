@@ -90,19 +90,12 @@ public class MetricsProcessorHelper {
             .dimensions(dimensions)
             .build();
 
-        ListMetricsResponse listMetricsResult = awsCloudWatch.listMetrics(request);
-        awsRequestsCounter.increment();
-        List<Metric> metrics = listMetricsResult.metrics();
+        List<Metric> metrics = new ArrayList<>();
 
-        // Retrieves all the metrics if metricList > 500
-        while (listMetricsResult.nextToken() != null) {
-            request = request.toBuilder()
-                .nextToken(listMetricsResult.nextToken())
-                .build();
-            listMetricsResult = awsCloudWatch.listMetrics(request);
-            awsRequestsCounter.increment();
-            metrics.addAll(listMetricsResult.metrics());
-        }
+        awsCloudWatch.listMetricsPaginator(request).stream()
+                .peek(resp -> awsRequestsCounter.increment()) // count each API request
+                .flatMap(resp -> resp.metrics().stream())     // flatten pages into a single stream
+                .forEach(metrics::add);
 
         return metrics;
     }
