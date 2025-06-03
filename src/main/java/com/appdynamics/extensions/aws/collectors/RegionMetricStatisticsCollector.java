@@ -7,13 +7,7 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.InstanceProfileCredentialsProvider;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
+import com.appdynamics.extensions.aws.config.AwsClientConfig;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
@@ -26,9 +20,15 @@ import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
+import java.net.URI;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClientBuilder;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -63,7 +63,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
     private MetricsTimeRange metricsTimeRange;
 
-    private AmazonCloudWatch awsCloudWatch;
+    private CloudWatchClient awsCloudWatch;
 
     private RateLimiter rateLimiter;
 
@@ -147,7 +147,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         List<FutureTask<MetricStatistic>> futureTasks = Lists.newArrayList();
 
-        long startTime = DateTime.now().getSecondOfMinute();
+        long startTime = System.currentTimeMillis();
         for (AWSMetric metric : metrics) {
 
             //Limit the number of requests per second. Limit can be configured using getMetricStatisticsRateLimit config
@@ -170,9 +170,9 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
             executorService.submit("RegionMetricStatisticsCollector", accountTaskExecutor);
             futureTasks.add(accountTaskExecutor);
         }
-        long elapsedTimeSeconds = DateTime.now().getSecondOfMinute() - startTime;
+        long elapsedTime = System.currentTimeMillis() - startTime;
 
-        LOGGER.debug("Get metric statistics took " + elapsedTimeSeconds);
+        LOGGER.debug("Get metric statistics took " + elapsedTime +"(ms)");
 
         return futureTasks;
     }
@@ -219,7 +219,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         private MetricsTimeRange metricsTimeRange;
 
-        private AmazonCloudWatch awsCloudWatch;
+        private CloudWatchClient awsCloudWatch;
 
         private RateLimiter rateLimiter;
 
@@ -249,26 +249,36 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
             return this;
         }
 
-        public Builder withAmazonCloudWatchConfig(AWSCredentials awsCredentials,
-                                                  ClientConfiguration awsClientConfig) {
+        public Builder withAmazonCloudWatchConfig(AwsCredentialsProvider awsCredentials, AwsClientConfig awsClientConfig) {
+            // Derive the endpoint URI from your endpoint provider.
+            String endpointUrl = RegionEndpointProvider.getInstance().getEndpoint(region);
+            URI endpointUri = URI.create("https://" + endpointUrl);
+            LOGGER.debug(String.format("Endpoint URI: %s",endpointUri));
 
-            AwsClientBuilder.EndpointConfiguration endpointConfiguration = new AwsClientBuilder.EndpointConfiguration(RegionEndpointProvider.getInstance().getEndpoint(region), region);
-            AmazonCloudWatch amazonCloudWatch = awsClientCache.get(endpointConfiguration.getServiceEndpoint());
-            if (amazonCloudWatch == null) {
-                LOGGER.info("CloudWatch object does not exists in cache, creating and adding it to cache.");
+            // Retrieve a CloudWatchClient from the cache, keyed by the endpoint URI.
+            CloudWatchClient cloudWatchClient = awsClientCache.get(endpointUri.toString());
+            if (cloudWatchClient == null) {
+                LOGGER.info("CloudWatch client not found in cache; creating a new client and adding it to cache.");
+
+                CloudWatchClientBuilder clientBuilder = CloudWatchClient.builder()
+                        .endpointOverride(endpointUri)
+                        .region(Region.of(region))
+                        .httpClient(awsClientConfig.getHttpClient())
+                        .overrideConfiguration(awsClientConfig.getOverrideConfiguration());
+
                 if (awsCredentials == null) {
-                    this.awsCloudWatch = AmazonCloudWatchClientBuilder.standard().withCredentials(InstanceProfileCredentialsProvider.getInstance()).withClientConfiguration(awsClientConfig).withEndpointConfiguration(endpointConfiguration).build();
-                    LOGGER.info("Credentials not provided trying to use instance profile credentials");
+                    //clientBuilder.credentialsProvider(InstanceProfileCredentialsProvider.create());
+                    LOGGER.info("No credentials provided; using default credentials provider.");
                 } else {
-                    AWSStaticCredentialsProvider awsCredentialsProvider = new AWSStaticCredentialsProvider(awsCredentials);
-                    this.awsCloudWatch = AmazonCloudWatchClientBuilder.standard().withCredentials(awsCredentialsProvider).withClientConfiguration(awsClientConfig).withEndpointConfiguration(endpointConfiguration).build();
-                    //LOGGER.info("Credentials not provided trying to use instance profile credentials");
-                    LOGGER.info("Credentials are provided. Trying to use access key and secret key");
+                    clientBuilder.credentialsProvider(awsCredentials);
+                    LOGGER.info("Credentials provided; using supplied AWS credentials provider.");
                 }
-                awsClientCache.put(endpointConfiguration.getServiceEndpoint(), awsCloudWatch);
+                cloudWatchClient = clientBuilder.build();
+                awsClientCache.put(endpointUri, cloudWatchClient);
             } else {
-                this.awsCloudWatch = awsClientCache.get(endpointConfiguration.getServiceEndpoint());
+                cloudWatchClient = awsClientCache.get(endpointUri);
             }
+            this.awsCloudWatch = cloudWatchClient;
             return this;
         }
 

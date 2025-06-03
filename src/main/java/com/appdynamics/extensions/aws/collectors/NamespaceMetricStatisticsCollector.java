@@ -165,6 +165,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
 
         for (FutureTask<AccountMetricStatistics> task : parallelTasks) {
             try {
+                LOGGER.debug(String.format("Task: %s",task.toString()));
                 AccountMetricStatistics accountStats = task.get(concurrencyConfig.getThreadTimeOut(), TimeUnit.SECONDS);
                 namespaceMetricStatistics.add(accountStats);
 

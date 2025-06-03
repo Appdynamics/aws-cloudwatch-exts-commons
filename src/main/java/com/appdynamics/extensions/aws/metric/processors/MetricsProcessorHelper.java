@@ -7,12 +7,7 @@
 
 package com.appdynamics.extensions.aws.metric.processors;
 
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.model.Dimension;
-import com.amazonaws.services.cloudwatch.model.DimensionFilter;
-import com.amazonaws.services.cloudwatch.model.ListMetricsRequest;
-import com.amazonaws.services.cloudwatch.model.ListMetricsResult;
-import com.amazonaws.services.cloudwatch.model.Metric;
+import com.appdynamics.extensions.aws.config.AwsClientConfig;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.metric.AccountMetricStatistics;
@@ -26,6 +21,12 @@ import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatch.model.Dimension;
+import software.amazon.awssdk.services.cloudwatch.model.DimensionFilter;
+import software.amazon.awssdk.services.cloudwatch.model.ListMetricsRequest;
+import software.amazon.awssdk.services.cloudwatch.model.ListMetricsResponse;
+import software.amazon.awssdk.services.cloudwatch.model.Metric;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -49,19 +50,19 @@ public class MetricsProcessorHelper {
     private static Logger LOGGER = ExtensionsLoggerFactory.getLogger(MetricsProcessorHelper.class);
 
 
-    public static List<AWSMetric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
+    public static List<AWSMetric> getFilteredMetrics(CloudWatchClient awsCloudWatch,
                                                      LongAdder awsRequestsCounter, String namespace, List<IncludeMetric> includeMetrics, String... dimensionNames) {
         List<Metric> metrics = getMetrics(awsCloudWatch, awsRequestsCounter, namespace, dimensionNames);
         return filterMetrics(metrics, includeMetrics);
     }
 
-    public static List<AWSMetric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
+    public static List<AWSMetric> getFilteredMetrics(CloudWatchClient awsCloudWatch,
                                                      LongAdder awsRequestsCounter, String namespace, List<IncludeMetric> includeMetrics, List<DimensionFilter> dimensions) {
         List<Metric> metrics = getMetrics(awsCloudWatch, awsRequestsCounter, namespace, dimensions);
         return filterMetrics(metrics, includeMetrics);
     }
 
-    public static List<AWSMetric> getFilteredMetrics(AmazonCloudWatch awsCloudWatch,
+    public static List<AWSMetric> getFilteredMetrics(CloudWatchClient awsCloudWatch,
                                                      LongAdder awsRequestsCounter, String namespace, List<IncludeMetric> includeMetrics, List<DimensionFilter> dimensions, Predicate<Metric> metricFilter) {
         List<Metric> metrics = getMetrics(awsCloudWatch, awsRequestsCounter, namespace, dimensions);
 
@@ -71,36 +72,30 @@ public class MetricsProcessorHelper {
     }
 
 
-    public static List<Metric> getMetrics(AmazonCloudWatch awsCloudWatch,
+    public static List<Metric> getMetrics(CloudWatchClient awsCloudWatch,
                                           LongAdder awsRequestsCounter, String namespace, String... dimensionNames) {
         List<DimensionFilter> dimensions = new ArrayList<DimensionFilter>();
 
         for (String dimensionName : dimensionNames) {
-            DimensionFilter dimension = new DimensionFilter();
-            dimension.withName(dimensionName);
-            dimensions.add(dimension);
+            dimensions.add(DimensionFilter.builder().name(dimensionName).build());
         }
 
         return getMetrics(awsCloudWatch, awsRequestsCounter, namespace, dimensions);
     }
 
-    public static List<Metric> getMetrics(AmazonCloudWatch awsCloudWatch,
+    public static List<Metric> getMetrics(CloudWatchClient awsCloudWatch,
                                           LongAdder awsRequestsCounter, String namespace, List<DimensionFilter> dimensions) {
-        ListMetricsRequest request = new ListMetricsRequest();
+        ListMetricsRequest request = ListMetricsRequest.builder()
+            .namespace(namespace)
+            .dimensions(dimensions)
+            .build();
 
-        request.withNamespace(namespace);
-        request.withDimensions(dimensions);
-        ListMetricsResult listMetricsResult = awsCloudWatch.listMetrics(request);
-        awsRequestsCounter.increment();
-        List<Metric> metrics = listMetricsResult.getMetrics();
+        List<Metric> metrics = new ArrayList<>();
 
-        // Retrieves all the metrics if metricList > 500
-        while (listMetricsResult.getNextToken() != null) {
-            request.setNextToken(listMetricsResult.getNextToken());
-            listMetricsResult = awsCloudWatch.listMetrics(request);
-            awsRequestsCounter.increment();
-            metrics.addAll(listMetricsResult.getMetrics());
-        }
+        awsCloudWatch.listMetricsPaginator(request).stream()
+                .peek(resp -> awsRequestsCounter.increment()) // count each API request
+                .flatMap(resp -> resp.metrics().stream())     // flatten pages into a single stream
+                .forEach(metrics::add);
 
         return metrics;
     }
@@ -127,7 +122,7 @@ public class MetricsProcessorHelper {
 
             for (Metric metric : metrics) {
                 for (IncludeMetric includeMetric : includeMetrics) {
-                    if (includeMetric.getName().equals(metric.getMetricName())) {
+                    if (includeMetric.getName().equals(metric.metricName())) {
                         AWSMetric awsMetric = new AWSMetric();
                         awsMetric.setIncludeMetric(includeMetric);
                         awsMetric.setMetric(metric);
@@ -231,15 +226,15 @@ public class MetricsProcessorHelper {
         for (MetricStatistic metricStats : metricStatsList) {
             String partialMetricPath = regionPrefix;
 
-            for (Dimension dimension : metricStats.getMetric().getMetric().getDimensions()) {
-                String dimensionNameForMetricPath = getDimesionNameForMetricPath(dimension.getName(),
+            for (Dimension dimension : metricStats.getMetric().getMetric().dimensions()) {
+                String dimensionNameForMetricPath = getDimesionNameForMetricPath(dimension.name(),
                         dimensionNameForMetricPathDictionary);
 
                 // e.g. MyTestAccount|us-east-1|Cache Cluster|
                 partialMetricPath = buildMetricName(partialMetricPath, dimensionNameForMetricPath, true);
 
                 // e.g. MyTestAccount|us-east-1|Cache Cluster|mycachecluster
-                partialMetricPath = buildMetricName(partialMetricPath, dimension.getValue(), true);
+                partialMetricPath = buildMetricName(partialMetricPath, dimension.value(), true);
             }
 
             String awsMetricName = metricStats.getMetric().getIncludeMetric().getName();

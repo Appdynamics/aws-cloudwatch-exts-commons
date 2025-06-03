@@ -12,13 +12,6 @@ import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.model.Datapoint;
-import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
-import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
-import com.amazonaws.services.cloudwatch.model.Metric;
-import com.amazonaws.services.cloudwatch.model.StandardUnit;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
@@ -32,6 +25,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import software.amazon.awssdk.core.exception.SdkServiceException;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatch.model.Datapoint;
+import software.amazon.awssdk.services.cloudwatch.model.GetMetricStatisticsRequest;
+import software.amazon.awssdk.services.cloudwatch.model.GetMetricStatisticsResponse;
+import software.amazon.awssdk.services.cloudwatch.model.Metric;
+import software.amazon.awssdk.services.cloudwatch.model.StandardUnit;
 
 import java.lang.reflect.Field;
 import java.util.Date;
@@ -54,10 +54,10 @@ public class MetricStatisticsCollectorTest {
     private Metric mockMetric;
 
     @Mock
-    private AmazonCloudWatch mockAwsCloudWatch;
+    private CloudWatchClient mockAwsCloudWatch;
 
     @Mock
-    private GetMetricStatisticsResult mockGetMetricStatsResult;
+    private GetMetricStatisticsResponse mockGetMetricStatsResult;
 
     @Mock
     private MetricsTimeRange mockMetricsTimeRange;
@@ -88,7 +88,7 @@ public class MetricStatisticsCollectorTest {
     @Test(expected = AwsException.class)
     public void testAwsCloudwatchThrowsException() throws Exception {
         when(mockAwsCloudWatch.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
-                .thenThrow(new AmazonServiceException("test exception"));
+                .thenThrow(new Exception("test exception"));
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(new MetricsTimeRange())
@@ -117,7 +117,7 @@ public class MetricStatisticsCollectorTest {
         when(mockAwsCloudWatch.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
                 .thenReturn(mockGetMetricStatsResult);
 
-        when(mockGetMetricStatsResult.getDatapoints()).thenReturn(testDatapoints);
+        when(mockGetMetricStatsResult.datapoints()).thenReturn(testDatapoints);
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(new MetricsTimeRange())
@@ -129,8 +129,8 @@ public class MetricStatisticsCollectorTest {
 
         MetricStatistic result = classUnderTest.call();
 
-        assertEquals(latestDatapoint.getSum(), result.getValue());
-        assertEquals(latestDatapoint.getUnit(), result.getUnit());
+        assertEquals(latestDatapoint.sum(), result.getValue());
+        assertEquals(latestDatapoint.unit(), result.getUnit());
     }
 
     @Test
@@ -140,7 +140,7 @@ public class MetricStatisticsCollectorTest {
         when(mockAwsCloudWatch.getMetricStatistics(any(GetMetricStatisticsRequest.class)))
                 .thenReturn(mockGetMetricStatsResult);
 
-        when(mockGetMetricStatsResult.getDatapoints()).thenReturn(testDatapoints);
+        when(mockGetMetricStatsResult.datapoints()).thenReturn(testDatapoints);
 
         classUnderTest = new MetricStatisticCollector.Builder()
                 .withMetricsTimeRange(new MetricsTimeRange())
@@ -197,14 +197,16 @@ public class MetricStatisticsCollectorTest {
     private Datapoint createTestDatapoint(Date timestamp) {
         Random random = new Random();
 
-        Datapoint datapoint = new Datapoint();
-        datapoint.setAverage(random.nextDouble());
-        datapoint.setMaximum(random.nextDouble());
-        datapoint.setMinimum(random.nextDouble());
-        datapoint.setSampleCount(random.nextDouble());
-        datapoint.setSum(random.nextDouble());
-        datapoint.setTimestamp(timestamp);
-        datapoint.setUnit(StandardUnit.Bits);
+        Datapoint datapoint = Datapoint.builder()
+            .average(random.nextDouble())
+            .maximum(random.nextDouble())
+            .minimum(random.nextDouble())
+            .sampleCount(random.nextDouble())
+            .sum(random.nextDouble())
+            .timestamp(timestamp.toInstant())
+            .unit(StandardUnit.BITS)
+            .build();
+
         return datapoint;
     }
 

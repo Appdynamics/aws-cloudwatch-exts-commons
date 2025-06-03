@@ -16,8 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
+import com.appdynamics.extensions.aws.config.AwsClientConfig;
 import com.appdynamics.extensions.executorservice.MonitorThreadPoolExecutor;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
@@ -37,6 +36,7 @@ import org.mockito.Mockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 import java.util.Random;
 import java.util.Set;
@@ -96,7 +96,7 @@ public class AccountMetricStatisticsCollectorTest {
         RegionMetricStatisticsCollector.Builder mockBuilder = mock(RegionMetricStatisticsCollector.Builder.class);
         whenNew(RegionMetricStatisticsCollector.Builder.class).withNoArguments().thenReturn(mockBuilder);
         when(mockBuilder.withAccountName(anyString())).thenReturn(mockBuilder);
-        when(mockBuilder.withAmazonCloudWatchConfig(any(AWSCredentials.class), any(ClientConfiguration.class)))
+        when(mockBuilder.withAmazonCloudWatchConfig(any(StaticCredentialsProvider.class), any(AwsClientConfig.class)))
                 .thenReturn(mockBuilder);
         when(mockBuilder.withMetricsProcessor(any(MetricsProcessor.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
@@ -177,7 +177,7 @@ public class AccountMetricStatisticsCollectorTest {
         RegionMetricStatisticsCollector.Builder mockBuilder = mock(RegionMetricStatisticsCollector.Builder.class);
         whenNew(RegionMetricStatisticsCollector.Builder.class).withNoArguments().thenReturn(mockBuilder);
         when(mockBuilder.withAccountName(anyString())).thenReturn(mockBuilder);
-        when(mockBuilder.withAmazonCloudWatchConfig(any(AWSCredentials.class), any(ClientConfiguration.class)))
+        when(mockBuilder.withAmazonCloudWatchConfig(any(StaticCredentialsProvider.class), any(AwsClientConfig.class)))
                 .thenReturn(mockBuilder);
         when(mockBuilder.withMetricsProcessor(any(MetricsProcessor.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);

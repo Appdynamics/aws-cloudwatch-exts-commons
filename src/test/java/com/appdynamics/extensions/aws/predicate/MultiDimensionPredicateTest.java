@@ -10,8 +10,8 @@ package com.appdynamics.extensions.aws.predicate;
 
 import static org.mockito.Mockito.when;
 
-import com.amazonaws.services.cloudwatch.model.Dimension;
-import com.amazonaws.services.cloudwatch.model.Metric;
+import software.amazon.awssdk.services.cloudwatch.model.Metric;
+import software.amazon.awssdk.services.cloudwatch.model.Dimension;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.junit.Assert;
@@ -44,9 +44,9 @@ public class MultiDimensionPredicateTest {
         List<com.appdynamics.extensions.aws.config.Dimension> dimensions = Lists.newArrayList(dimension);
 
         MultiDimensionPredicate classUnderTest = new MultiDimensionPredicate(dimensions);
-        when(metric.getDimensions()).thenReturn(Lists.newArrayList(awsDimension));
-        when(awsDimension.getName()).thenReturn("LoadBalancerName");
-        when(awsDimension.getValue()).thenReturn("Dimension");
+        when(metric.dimensions()).thenReturn(Lists.newArrayList(awsDimension));
+        when(awsDimension.name()).thenReturn("LoadBalancerName");
+        when(awsDimension.value()).thenReturn("Dimension");
         Assert.assertFalse(classUnderTest.apply(metric));
     }
 
@@ -60,9 +60,9 @@ public class MultiDimensionPredicateTest {
         List<com.appdynamics.extensions.aws.config.Dimension> dimensions = Lists.newArrayList(dimension);
 
         MultiDimensionPredicate classUnderTest = new MultiDimensionPredicate(dimensions);
-        when(metric.getDimensions()).thenReturn(Lists.newArrayList(awsDimension));
-        when(awsDimension.getName()).thenReturn("LoadBalancerName");
-        when(awsDimension.getValue()).thenReturn("Dimension");
+        when(metric.dimensions()).thenReturn(Lists.newArrayList(awsDimension));
+        when(awsDimension.name()).thenReturn("LoadBalancerName");
+        when(awsDimension.value()).thenReturn("Dimension");
         Assert.assertFalse(classUnderTest.apply(metric));
     }
 
@@ -77,12 +77,12 @@ public class MultiDimensionPredicateTest {
 
 
         MultiDimensionPredicate classUnderTest = new MultiDimensionPredicate(dimensions);
-        when(metric.getDimensions()).thenReturn(Lists.newArrayList(awsDimension));
-        when(awsDimension.getName()).thenReturn("LoadBalancerName");
-        when(awsDimension.getValue()).thenReturn("Dimension");
+        when(metric.dimensions()).thenReturn(Lists.newArrayList(awsDimension));
+        when(awsDimension.name()).thenReturn("LoadBalancerName");
+        when(awsDimension.value()).thenReturn("Dimension");
         Assert.assertTrue(classUnderTest.apply(metric));
 
-        when(awsDimension.getValue()).thenReturn("AnotherDimention");
+        when(awsDimension.value()).thenReturn("AnotherDimention");
         Assert.assertTrue(classUnderTest.apply(metric));
     }
 
@@ -96,12 +96,12 @@ public class MultiDimensionPredicateTest {
         List<com.appdynamics.extensions.aws.config.Dimension> dimensions = Lists.newArrayList(dimension);
 
         MultiDimensionPredicate classUnderTest = new MultiDimensionPredicate(dimensions);
-        when(metric.getDimensions()).thenReturn(Lists.newArrayList(awsDimension));
-        when(awsDimension.getName()).thenReturn("LoadBalancerName");
-        when(awsDimension.getValue()).thenReturn("Dimension");
+        when(metric.dimensions()).thenReturn(Lists.newArrayList(awsDimension));
+        when(awsDimension.name()).thenReturn("LoadBalancerName");
+        when(awsDimension.value()).thenReturn("Dimension");
         Assert.assertTrue(classUnderTest.apply(metric));
 
-        when(awsDimension.getValue()).thenReturn("AnotherDimention");
+        when(awsDimension.value()).thenReturn("AnotherDimention");
         Assert.assertFalse(classUnderTest.apply(metric));
     }
 
@@ -115,13 +115,13 @@ public class MultiDimensionPredicateTest {
         List<com.appdynamics.extensions.aws.config.Dimension> dimensions = Lists.newArrayList(dimension);
 
         MultiDimensionPredicate classUnderTest = new MultiDimensionPredicate(dimensions);
-        when(metric.getDimensions()).thenReturn(Lists.newArrayList(awsDimension));
-        when(awsDimension.getName()).thenReturn("LoadBalancerName");
+        when(metric.dimensions()).thenReturn(Lists.newArrayList(awsDimension));
+        when(awsDimension.name()).thenReturn("LoadBalancerName");
 
-        when(awsDimension.getValue()).thenReturn("Dimension");
+        when(awsDimension.value()).thenReturn("Dimension");
         Assert.assertTrue(classUnderTest.apply(metric));
 
-        when(awsDimension.getValue()).thenReturn("test");
+        when(awsDimension.value()).thenReturn("test");
         Assert.assertTrue(classUnderTest.apply(metric));
     }
 
@@ -135,10 +135,10 @@ public class MultiDimensionPredicateTest {
         List<com.appdynamics.extensions.aws.config.Dimension> dimensions = Lists.newArrayList(dimension);
 
         MultiDimensionPredicate classUnderTest = new MultiDimensionPredicate(dimensions);
-        when(metric.getDimensions()).thenReturn(Lists.newArrayList(awsDimension));
-        when(awsDimension.getName()).thenReturn("LoadBalancerName");
+        when(metric.dimensions()).thenReturn(Lists.newArrayList(awsDimension));
+        when(awsDimension.name()).thenReturn("LoadBalancerName");
 
-        when(awsDimension.getValue()).thenReturn("Dimensions");
+        when(awsDimension.value()).thenReturn("Dimensions");
         Assert.assertTrue(classUnderTest.apply(metric));
     }
 
@@ -153,9 +153,9 @@ public class MultiDimensionPredicateTest {
         List<com.appdynamics.extensions.aws.config.Dimension> dimensions = Lists.newArrayList(dimension);
 
         MultiDimensionPredicate classUnderTest = new MultiDimensionPredicate(dimensions);
-        when(metric.getDimensions()).thenReturn(Lists.newArrayList(awsDimension));
-        when(awsDimension.getName()).thenReturn("LoadBalancerName");
-        when(awsDimension.getValue()).thenReturn("Hammer");
+        when(metric.dimensions()).thenReturn(Lists.newArrayList(awsDimension));
+        when(awsDimension.name()).thenReturn("LoadBalancerName");
+        when(awsDimension.value()).thenReturn("Hammer");
         Assert.assertFalse(classUnderTest.apply(metric));
     }
 
@@ -174,14 +174,14 @@ public class MultiDimensionPredicateTest {
 
         MultiDimensionPredicate classUnderTest = new MultiDimensionPredicate(dimensions);
 
-        when(metric.getDimensions()).thenReturn(Lists.newArrayList(awsDimension));
-        when(awsDimension.getName()).thenReturn("TargetGroup");
-        when(awsDimension.getValue()).thenReturn("targetgroup/toolsappdynamicscom/abcd");
+        when(metric.dimensions()).thenReturn(Lists.newArrayList(awsDimension));
+        when(awsDimension.name()).thenReturn("TargetGroup");
+        when(awsDimension.value()).thenReturn("targetgroup/toolsappdynamicscom/abcd");
         Assert.assertTrue(classUnderTest.apply(metric));
 
-        when(metric.getDimensions()).thenReturn(Lists.newArrayList(awsDimension));
-        when(awsDimension.getName()).thenReturn("TargetGroup");
-        when(awsDimension.getValue()).thenReturn("targetgroup/testappd/abcd");
+        when(metric.dimensions()).thenReturn(Lists.newArrayList(awsDimension));
+        when(awsDimension.name()).thenReturn("TargetGroup");
+        when(awsDimension.value()).thenReturn("targetgroup/testappd/abcd");
         Assert.assertFalse(classUnderTest.apply(metric));
     }
 

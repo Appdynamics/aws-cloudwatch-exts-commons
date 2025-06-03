@@ -7,14 +7,7 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
-import com.amazonaws.services.cloudwatch.model.Dimension;
-import com.amazonaws.services.cloudwatch.model.Metric;
+import com.appdynamics.extensions.aws.config.AwsClientConfig;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
@@ -35,6 +28,14 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClientBuilder;
+import software.amazon.awssdk.services.cloudwatch.endpoints.CloudWatchEndpointProvider;
+import software.amazon.awssdk.services.cloudwatch.model.Dimension;
+import software.amazon.awssdk.services.cloudwatch.model.Metric;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,20 +61,20 @@ import static org.powermock.api.mockito.PowerMockito.whenNew;
 @PrepareForTest({RegionEndpointProvider.class,
         RegionMetricStatisticsCollector.class,
         ExecutorCompletionService.class,
-        RateLimiter.class, AmazonCloudWatchClientBuilder.class, AwsClientBuilder.class, AwsClientBuilder.EndpointConfiguration.class})
+        RateLimiter.class, CloudWatchClientBuilder.class, AwsClientBuilder.class, AwsClientBuilder.class})
 @PowerMockIgnore({"org.apache.*, javax.xml.*"})
 public class RegionMetricStatisticsCollectorTest {
 
     private RegionMetricStatisticsCollector classUnderTest;
 
     @Mock
-    private AmazonCloudWatch amazonCloudWatch;
+    private CloudWatchClient amazonCloudWatch;
 
     @Mock
-    private AWSCredentials mockAWSCredentials;
+    private StaticCredentialsProvider mockAWSCredentials;
 
     @Mock
-    private ClientConfiguration mockAwsClientConfig;
+    private AwsClientConfig mockAwsClientConfig;
 
     @Mock
     private MetricsProcessor mockMetricsProcessor;
@@ -84,19 +85,19 @@ public class RegionMetricStatisticsCollectorTest {
     private RegionEndpointProvider mockRegionEndpointProvider;
 
     @Mock
-    private AmazonCloudWatchClientBuilder amazonCloudWatchClientBuilder;
+    private CloudWatchClientBuilder amazonCloudWatchClientBuilder;
 
     @Before
     public void setUp() throws Exception {
         mockStatic(RegionEndpointProvider.class);
         when(RegionEndpointProvider.getInstance()).thenReturn(mockRegionEndpointProvider);
 
-        PowerMockito.mockStatic(AmazonCloudWatchClientBuilder.class);
+        PowerMockito.mockStatic(CloudWatchClientBuilder.class);
 
-        when(AmazonCloudWatchClientBuilder.standard()).thenReturn(amazonCloudWatchClientBuilder);
-        when(amazonCloudWatchClientBuilder.withCredentials(any(AWSStaticCredentialsProvider.class))).thenReturn(amazonCloudWatchClientBuilder);
-        when(amazonCloudWatchClientBuilder.withClientConfiguration(any(ClientConfiguration.class))).thenReturn(amazonCloudWatchClientBuilder);
-        when(amazonCloudWatchClientBuilder.withEndpointConfiguration(any(AwsClientBuilder.EndpointConfiguration.class))).thenReturn(amazonCloudWatchClientBuilder);
+        when(CloudWatchClient.builder()).thenReturn(amazonCloudWatchClientBuilder);
+        when(amazonCloudWatchClientBuilder.credentialsProvider(any(StaticCredentialsProvider.class))).thenReturn(amazonCloudWatchClientBuilder);
+        when(amazonCloudWatchClientBuilder.overrideConfiguration(any(ClientOverrideConfiguration.class))).thenReturn(amazonCloudWatchClientBuilder);
+        when(amazonCloudWatchClientBuilder.endpointProvider(any(CloudWatchEndpointProvider.class))).thenReturn(amazonCloudWatchClientBuilder);
         when(amazonCloudWatchClientBuilder.build()).thenReturn(amazonCloudWatch);
     }
 
@@ -105,7 +106,7 @@ public class RegionMetricStatisticsCollectorTest {
 
         when(mockMetricsProcessor.getNamespace()).thenReturn("testNamespace");
         when(mockRegionEndpointProvider.getEndpoint(anyString())).thenReturn("test-endpoint");
-        when(mockMetricsProcessor.getMetrics(any(AmazonCloudWatch.class), anyString(), any(LongAdder.class))).thenReturn(new ArrayList<AWSMetric>());
+        when(mockMetricsProcessor.getMetrics(any(CloudWatchClient.class), anyString(), any(LongAdder.class))).thenReturn(new ArrayList<AWSMetric>());
 
         String testRegion = "testRegion";
 
@@ -127,7 +128,7 @@ public class RegionMetricStatisticsCollectorTest {
         when(mockRegionEndpointProvider.getEndpoint(anyString())).thenReturn("test-endpoint");
 
         List<AWSMetric> testMetrics = getTestMetrics();
-        when(mockMetricsProcessor.getMetrics(any(AmazonCloudWatch.class), anyString(), any(LongAdder.class))).thenReturn(testMetrics);
+        when(mockMetricsProcessor.getMetrics(any(CloudWatchClient.class), anyString(), any(LongAdder.class))).thenReturn(testMetrics);
         when(mockMetricsProcessor.getStatisticType(any(AWSMetric.class))).thenReturn(StatisticType.AVE);
         when(mockMetricsProcessor.getNamespace()).thenReturn("testNamespace");
 
@@ -144,7 +145,7 @@ public class RegionMetricStatisticsCollectorTest {
         MetricStatisticCollector.Builder mockBuilder = mock(MetricStatisticCollector.Builder.class);
         whenNew(MetricStatisticCollector.Builder.class).withNoArguments().thenReturn(mockBuilder);
         when(mockBuilder.withAccountName(anyString())).thenReturn(mockBuilder);
-        when(mockBuilder.withAwsCloudWatch(any(AmazonCloudWatch.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withAwsCloudWatch(any(CloudWatchClient.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetric(any(AWSMetric.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
         when(mockBuilder.withRegion(anyString())).thenReturn(mockBuilder);
@@ -184,7 +185,7 @@ public class RegionMetricStatisticsCollectorTest {
 
         testMetrics.addAll(testAdditionalMetrics);
 
-        when(mockMetricsProcessor.getMetrics(any(AmazonCloudWatch.class), anyString(), any(LongAdder.class))).thenReturn(testMetrics);
+        when(mockMetricsProcessor.getMetrics(any(CloudWatchClient.class), anyString(), any(LongAdder.class))).thenReturn(testMetrics);
         when(mockMetricsProcessor.getStatisticType(any(AWSMetric.class))).thenReturn(StatisticType.AVE);
         when(mockMetricsProcessor.getNamespace()).thenReturn("testNamespace");
 
@@ -208,7 +209,7 @@ public class RegionMetricStatisticsCollectorTest {
         MetricStatisticCollector.Builder mockBuilder = mock(MetricStatisticCollector.Builder.class);
         whenNew(MetricStatisticCollector.Builder.class).withNoArguments().thenReturn(mockBuilder);
         when(mockBuilder.withAccountName(anyString())).thenReturn(mockBuilder);
-        when(mockBuilder.withAwsCloudWatch(any(AmazonCloudWatch.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withAwsCloudWatch(any(CloudWatchClient.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetric(any(AWSMetric.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
         when(mockBuilder.withRegion(anyString())).thenReturn(mockBuilder);
@@ -254,16 +255,8 @@ public class RegionMetricStatisticsCollectorTest {
             IncludeMetric includeMetric = new IncludeMetric();
             includeMetric.setName("testMetric" + index);
 
-            Metric metric = new Metric();
-            metric.setNamespace("testNamespace");
-            metric.setMetricName("testMetric" + index);
-
-            Dimension dimension = new Dimension();
-            dimension.setName("testDimesionName" + index);
-            dimension.setValue("testDimesionValue" + index);
-
-            metric.setDimensions(Lists.newArrayList(dimension));
-
+            Dimension dimension = Dimension.builder().name("testDimesionName" + index).value("testDimesionValue" + index).build();
+            Metric metric = Metric.builder().metricName("testMetric" + index).namespace("testNamespace").dimensions(Lists.newArrayList(dimension)).build();
 
             AWSMetric awsMetric = new AWSMetric();
             awsMetric.setIncludeMetric(includeMetric);
@@ -280,7 +273,7 @@ public class RegionMetricStatisticsCollectorTest {
         when(mockRegionEndpointProvider.getEndpoint(anyString())).thenReturn("test-endpoint");
 
         List<AWSMetric> testMetrics = getTestMetrics();
-        when(mockMetricsProcessor.getMetrics(any(AmazonCloudWatch.class), anyString(), any(LongAdder.class))).thenReturn(testMetrics);
+        when(mockMetricsProcessor.getMetrics(any(CloudWatchClient.class), anyString(), any(LongAdder.class))).thenReturn(testMetrics);
         when(mockMetricsProcessor.getStatisticType(any(AWSMetric.class))).thenReturn(StatisticType.AVE);
         when(mockMetricsProcessor.getNamespace()).thenReturn("testNamespace");
 
@@ -297,7 +290,7 @@ public class RegionMetricStatisticsCollectorTest {
         MetricStatisticCollector.Builder mockBuilder = mock(MetricStatisticCollector.Builder.class);
         whenNew(MetricStatisticCollector.Builder.class).withNoArguments().thenReturn(mockBuilder);
         when(mockBuilder.withAccountName(anyString())).thenReturn(mockBuilder);
-        when(mockBuilder.withAwsCloudWatch(any(AmazonCloudWatch.class))).thenReturn(mockBuilder);
+        when(mockBuilder.withAwsCloudWatch(any(CloudWatchClient.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetric(any(AWSMetric.class))).thenReturn(mockBuilder);
         when(mockBuilder.withMetricsTimeRange(any(MetricsTimeRange.class))).thenReturn(mockBuilder);
         when(mockBuilder.withRegion(anyString())).thenReturn(mockBuilder);
@@ -344,17 +337,8 @@ public class RegionMetricStatisticsCollectorTest {
         for (int index = 0; index < 2; index++) {
             IncludeMetric includeMetric = new IncludeMetric();
             includeMetric.setName("testAddiMetric" + index);
-
-            Metric metric = new Metric();
-            metric.setNamespace("testNamespace");
-            metric.setMetricName("testAddiMetric" + index);
-
-            Dimension dimension = new Dimension();
-            dimension.setName("testDimesionName" + index);
-            dimension.setValue("testDimesionValue" + index);
-
-            metric.setDimensions(Lists.newArrayList(dimension));
-
+            Dimension dimension = Dimension.builder().name("testDimesionName" + index).value("testDimesionValue" + index).build();
+            Metric metric = Metric.builder().metricName("testAddiMetric" + index).namespace("testNamespace").dimensions(Lists.newArrayList(dimension)).build();
 
             AWSMetric awsMetric = new AWSMetric();
             awsMetric.setIncludeMetric(includeMetric);

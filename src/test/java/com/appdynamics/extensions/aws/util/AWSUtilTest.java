@@ -1,6 +1,5 @@
 package com.appdynamics.extensions.aws.util;
 
-import com.amazonaws.auth.AWSCredentials;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
 import com.appdynamics.extensions.crypto.Encryptor;
@@ -10,6 +9,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 /**
  * @author Satish Muddam
@@ -29,10 +31,11 @@ public class AWSUtilTest {
         Mockito.when(account.getAwsAccessKey()).thenReturn("accessKey1");
         Mockito.when(account.getAwsSecretKey()).thenReturn("secretKey1");
 
-        AWSCredentials awsCredentials = AWSUtil.createAWSCredentials(account, null);
+        StaticCredentialsProvider awsCredentialsProvider = AWSUtil.createAWSCredentials(account, null);
+        AwsCredentials awsCredentials = awsCredentialsProvider.resolveCredentials();
 
-        Assert.assertEquals("accessKey1", awsCredentials.getAWSAccessKeyId());
-        Assert.assertEquals("secretKey1", awsCredentials.getAWSSecretKey());
+        Assert.assertEquals("accessKey1", awsCredentials.accessKeyId());
+        Assert.assertEquals("secretKey1", awsCredentials.secretAccessKey());
     }
 
     @Test
@@ -48,9 +51,10 @@ public class AWSUtilTest {
         Mockito.when(credentialsDecryptionConfig.isDecryptionEnabled()).thenReturn(true);
         Mockito.when(credentialsDecryptionConfig.getEncryptionKey()).thenReturn("test");
 
-        AWSCredentials awsCredentials = AWSUtil.createAWSCredentials(account, credentialsDecryptionConfig);
+        StaticCredentialsProvider awsCredentialsProvider = AWSUtil.createAWSCredentials(account, credentialsDecryptionConfig);
+        AwsCredentials awsCredentials = awsCredentialsProvider.resolveCredentials();
 
-        Assert.assertEquals("accessKey1", awsCredentials.getAWSAccessKeyId());
-        Assert.assertEquals("secretKey1", awsCredentials.getAWSSecretKey());
+        Assert.assertEquals("accessKey1", awsCredentials.accessKeyId());
+        Assert.assertEquals("secretKey1", awsCredentials.secretAccessKey());
     }
 }

@@ -10,6 +10,9 @@ package com.appdynamics.extensions.aws.metric;
 import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
+import software.amazon.awssdk.services.cloudwatch.model.Statistic;
+
+import java.util.Collection;
 
 /**
  * @author Florencio Sarmiento
@@ -52,5 +55,16 @@ public enum StatisticType {
         }
 
         return AVE;
+    }
+
+    public Statistic asStatistic () {
+        switch (typeName) {
+            case "Average": return Statistic.AVERAGE;
+            case "Maximum": return Statistic.MAXIMUM;
+            case "Minimum": return Statistic.MINIMUM;
+            case "Sum": return Statistic.SUM;
+            case "SampleCount": return Statistic.SAMPLE_COUNT;
+            default: return Statistic.UNKNOWN_TO_SDK_VERSION;
+        }
     }
 }

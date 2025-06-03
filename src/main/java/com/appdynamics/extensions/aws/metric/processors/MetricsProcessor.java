@@ -7,12 +7,12 @@
 
 package com.appdynamics.extensions.aws.metric.processors;
 
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
 import com.appdynamics.extensions.aws.config.IncludeMetric;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.metric.NamespaceMetricStatistics;
 import com.appdynamics.extensions.aws.metric.StatisticType;
 import com.appdynamics.extensions.metrics.Metric;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 
 import java.util.List;
 import java.util.concurrent.atomic.LongAdder;
@@ -33,7 +33,8 @@ public interface MetricsProcessor {
      * @param awsRequestsCounter a requests counter which counts the number of requests
      * @return list of metrics
      */
-    List<AWSMetric> getMetrics(AmazonCloudWatch awsCloudWatch, String accountName, LongAdder awsRequestsCounter);
+    List<AWSMetric> getMetrics(
+            CloudWatchClient awsCloudWatch, String accountName, LongAdder awsRequestsCounter);
 
     /**
      * Returns the statistic type of the specified metric

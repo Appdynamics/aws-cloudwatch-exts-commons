@@ -15,9 +15,11 @@ import java.util.Set;
  */
 public class Account {
 	
-	private String awsAccessKey;
+	private String awsAccessKey = null;
 	
-	private String awsSecretKey;
+	private String awsSecretKey = null;
+
+	private String awsSessionToken = null;
 	
 	private String displayAccountName;
 	
@@ -55,4 +57,11 @@ public class Account {
 		this.regions = regions;
 	}
 
+	public String getAwsSessionToken () {
+		return awsSessionToken;
+	}
+
+	public void setAwsSessionToken (String awsSessionToken) {
+		this.awsSessionToken = awsSessionToken;
+	}
 }

@@ -7,10 +7,6 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.model.Datapoint;
-import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
-import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
@@ -20,6 +16,10 @@ import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
+import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
+import software.amazon.awssdk.services.cloudwatch.model.Datapoint;
+import software.amazon.awssdk.services.cloudwatch.model.GetMetricStatisticsRequest;
+import software.amazon.awssdk.services.cloudwatch.model.GetMetricStatisticsResponse;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -53,7 +53,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
     private String region;
 
-    private AmazonCloudWatch awsCloudWatch;
+    private CloudWatchClient awsCloudWatch;
 
     private AWSMetric metric;
 
@@ -95,7 +95,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
     }
 
     /**
-     * Uses {@link AmazonCloudWatch} to retrieve metric datapoints.
+     * Uses {@link CloudWatchClient} to retrieve metric datapoints.
      * <p>
      * Returns statistic based from the latest datapoint
      * and the statistic type specified.
@@ -109,8 +109,8 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
             if (LOGGER.isTraceEnabled()) {
                 LOGGER.trace(String.format("Collecting MetricStatistic for Namespace [%s] "
                                 + "Account [%s] Region [%s] Metric [%s] Dimensions [%s]",
-                        metric.getMetric().getNamespace(), accountName, region,
-                        metric.getIncludeMetric().getName(), metric.getMetric().getDimensions()));
+                        metric.getMetric().namespace(), accountName, region,
+                        metric.getIncludeMetric().getName(), metric.getMetric().dimensions()));
             }
 
             metricStatistic = new MetricStatistic();
@@ -118,39 +118,38 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
             metricStatistic.setMetricPrefix(metricPrefix);
 
             GetMetricStatisticsRequest request = createGetMetricStatisticsRequest();
-            GetMetricStatisticsResult result = awsCloudWatch.getMetricStatistics(request);
+            GetMetricStatisticsResponse result = awsCloudWatch.getMetricStatistics(request);
             awsRequestsCounter.increment();
 
-            Datapoint latestDatapoint = getLatestDatapoint(result.getDatapoints());
+            Datapoint latestDatapoint = getLatestDatapoint(result.datapoints());
 
             if (latestDatapoint != null) {
                 Double value = getValue(latestDatapoint);
                 metricStatistic.setValue(value);
-                metricStatistic.setUnit(latestDatapoint.getUnit());
+                metricStatistic.setUnit(latestDatapoint.unitAsString());
             }
 
         } catch (Exception e) {
             throw new AwsException(String.format(
                     "Error getting MetricStatistic for Namespace [%s] "
                             + "Account [%s] Region [%s] Metric [%s] Dimensions [%s]",
-                    metric.getMetric().getNamespace(), accountName, region,
-                    metric.getIncludeMetric().getName(), metric.getMetric().getDimensions()), e);
+                    metric.getMetric().namespace(), accountName, region,
+                    metric.getIncludeMetric().getName(), metric.getMetric().dimensions()), e);
         }
 
         return metricStatistic;
     }
 
     private GetMetricStatisticsRequest createGetMetricStatisticsRequest() {
-        GetMetricStatisticsRequest getMetricStatisticsRequest = new GetMetricStatisticsRequest()
-                .withStartTime(DateTime.now(DateTimeZone.UTC)
-                        .minusMinutes(startTimeInMinsBeforeNow).toDate())
-                .withNamespace(metric.getMetric().getNamespace())
-                .withDimensions(metric.getMetric().getDimensions())
-                .withPeriod(DEFAULT_METRIC_PERIOD_IN_SEC)
-                .withMetricName(metric.getIncludeMetric().getName())
-                .withStatistics(statType.getTypeName())
-                .withEndTime(DateTime.now(DateTimeZone.UTC)
-                        .minusMinutes(endTimeInMinsBeforeNow).toDate());
+        GetMetricStatisticsRequest getMetricStatisticsRequest = GetMetricStatisticsRequest.builder()
+                .startTime(DateTime.now(DateTimeZone.UTC).minusMinutes(startTimeInMinsBeforeNow).toDate().toInstant())
+                .namespace(metric.getMetric().namespace())
+                .dimensions(metric.getMetric().dimensions())
+                .period(DEFAULT_METRIC_PERIOD_IN_SEC)
+                .metricName(metric.getIncludeMetric().getName())
+                .statistics(statType.asStatistic())
+                .endTime(DateTime.now(DateTimeZone.UTC).minusMinutes(endTimeInMinsBeforeNow).toDate().toInstant())
+                .build();
 
         return getMetricStatisticsRequest;
     }
@@ -168,8 +167,8 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         } else if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(String.format("No statistics retrieved for Namespace [%s] "
                             + "Account [%s] Region [%s] Metric [%s] Dimensions [%s]",
-                    metric.getMetric().getNamespace(), accountName, region,
-                    metric.getIncludeMetric().getName(), metric.getMetric().getDimensions()));
+                    metric.getMetric().namespace(), accountName, region,
+                    metric.getIncludeMetric().getName(), metric.getMetric().dimensions()));
         }
 
         return datapoint;
@@ -199,7 +198,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         }
 
         private Date getTimestamp(Datapoint datapoint) {
-            return datapoint != null ? datapoint.getTimestamp() : null;
+            return datapoint != null ? Date.from(datapoint.timestamp()) : null;
         }
     }
 
@@ -209,19 +208,19 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         if (datapoint != null) {
             switch (statType) {
                 case AVE:
-                    value = datapoint.getAverage();
+                    value = datapoint.average();
                     break;
                 case MAX:
-                    value = datapoint.getMaximum();
+                    value = datapoint.maximum();
                     break;
                 case MIN:
-                    value = datapoint.getMinimum();
+                    value = datapoint.minimum();
                     break;
                 case SUM:
-                    value = datapoint.getSum();
+                    value = datapoint.sum();
                     break;
                 case SAMPLE_COUNT:
-                    value = datapoint.getSampleCount();
+                    value = datapoint.sampleCount();
                     break;
             }
         }
@@ -249,7 +248,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
         private String region;
 
-        private AmazonCloudWatch awsCloudWatch;
+        private CloudWatchClient awsCloudWatch;
 
         private AWSMetric metric;
 
@@ -271,7 +270,8 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
             return this;
         }
 
-        public Builder withAwsCloudWatch(AmazonCloudWatch awsCloudWatch) {
+        public Builder withAwsCloudWatch(
+                CloudWatchClient awsCloudWatch) {
             this.awsCloudWatch = awsCloudWatch;
             return this;
         }
