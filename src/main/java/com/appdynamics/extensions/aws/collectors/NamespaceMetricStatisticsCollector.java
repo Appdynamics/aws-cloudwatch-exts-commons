@@ -26,7 +26,6 @@ import com.singularity.ee.agent.systemagent.api.MetricWriter;
 import org.slf4j.Logger;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -151,6 +150,7 @@ public class NamespaceMetricStatisticsCollector implements Callable<List<Metric>
                             .withRateLimiter(RateLimiter.create(metricsConfig.getGetMetricStatisticsRateLimit()))
                             .withAWSRequestCounter(awsRequestsCounter)
                             .withPrefix(metricPrefix)
+                            .withMetricsConfig(metricsConfig)
                             .build();
 
             FutureTask<AccountMetricStatistics> accountTaskExecutor = new FutureTask<AccountMetricStatistics>(accountTask);

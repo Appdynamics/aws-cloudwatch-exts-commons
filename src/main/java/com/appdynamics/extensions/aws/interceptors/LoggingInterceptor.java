@@ -1,5 +1,4 @@
 package com.appdynamics.extensions.aws.interceptors;
-import com.appdynamics.extensions.aws.collectors.NamespaceMetricStatisticsCollector;
 import com.appdynamics.extensions.logging.ExtensionsLoggerFactory;
 import org.slf4j.Logger;
 import software.amazon.awssdk.core.interceptor.Context;

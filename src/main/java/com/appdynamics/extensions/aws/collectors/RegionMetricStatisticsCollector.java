@@ -8,6 +8,7 @@
 package com.appdynamics.extensions.aws.collectors;
 
 import com.appdynamics.extensions.aws.config.AwsClientConfig;
+import com.appdynamics.extensions.aws.config.MetricsConfig;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
@@ -24,11 +25,9 @@ import org.slf4j.Logger;
 import java.net.URI;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClient;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchClientBuilder;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -71,6 +70,8 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
     private String metricPrefix;
 
+    private MetricsConfig metricsConfig;
+
     private RegionMetricStatisticsCollector(Builder builder) {
 
         this.accountName = builder.accountName;
@@ -81,6 +82,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         this.rateLimiter = builder.rateLimiter;
         this.awsRequestsCounter = builder.awsRequestsCounter;
         this.metricPrefix = builder.metricPrefix;
+        this.metricsConfig = builder.metricsConfig;
         this.threadTimeOut = builder.threadTimeOut;
 
         setNoOfMetricThreadsPerRegion(builder.noOfMetricThreadsPerRegion);
@@ -163,6 +165,7 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
                             .withStatType(metricsProcessor.getStatisticType(metric))
                             .withAWSRequestCounter(awsRequestsCounter)
                             .withPrefix(metricPrefix)
+                            .withMetricsConfig(metricsConfig)
                             .build();
 
             FutureTask<MetricStatistic> accountTaskExecutor = new FutureTask<MetricStatistic>(metricTask);
@@ -228,6 +231,8 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
         private String metricPrefix;
 
         private AWSClientCache awsClientCache = AWSClientCache.getInstance();
+
+        private MetricsConfig metricsConfig;
 
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
@@ -308,6 +313,11 @@ public class RegionMetricStatisticsCollector implements Callable<RegionMetricSta
 
         public Builder withThreadTimeOut(int threadTimeOut) {
             this.threadTimeOut = threadTimeOut;
+            return this;
+        }
+
+        public Builder withMetricsConfig(MetricsConfig metricsConfig) {
+            this.metricsConfig = metricsConfig;
             return this;
         }
     }

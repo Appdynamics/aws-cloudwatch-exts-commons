@@ -85,12 +85,15 @@ metricsConfig:
          clusterRollUpType: "COLLECTIVE"
          delta: false
          multiplier: 1
+         period: 60  # Override global period for this metric (1 minute)
       # Time range configuration to individual metrics also supported. If not configured uses the global time range configuration
     #    metricsTimeRange:
     #       startTimeInMinsBeforeNow: 15
     #       endTimeInMinsBeforeNow: 0
        - name: "NetworkOut"
+         period: 300  # 5-minute period for network metrics
        - name: "NetworkIn"
+         period: 300  # 5-minute period for network metrics
 
     metricsTimeRange:
       startTimeInMinsBeforeNow: 10
@@ -98,6 +101,11 @@ metricsConfig:
 
     # Rate limit ( per second ) for GetMetricStatistics, default value is 400. https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/cloudwatch_limits.html
     getMetricStatisticsRateLimit: 400
+
+    # Default period for all metrics (in seconds). Must be a multiple of 60.
+    # Valid values: 60, 300, 3600, etc.
+    # Individual metrics can override this value using the 'period' field
+    defaultPeriod: 300
 
     #
     # The max number of retry attempts for failed retryable requests

@@ -10,6 +10,7 @@ package com.appdynamics.extensions.aws.collectors;
 import com.appdynamics.extensions.aws.config.Account;
 import com.appdynamics.extensions.aws.config.AwsClientConfig;
 import com.appdynamics.extensions.aws.config.CredentialsDecryptionConfig;
+import com.appdynamics.extensions.aws.config.MetricsConfig;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.config.ProxyConfig;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
@@ -24,9 +25,7 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 
 
 import java.util.List;
@@ -77,6 +76,8 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
     private String metricPrefix;
 
+    private MetricsConfig metricsConfig;
+
     private AccountMetricStatisticsCollector(Builder builder) {
         this.account = builder.account;
         this.noOfMetricThreadsPerRegion = builder.noOfMetricThreadsPerRegion;
@@ -87,6 +88,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         this.rateLimiter = builder.rateLimiter;
         this.awsRequestsCounter = builder.awsRequestsCounter;
         this.metricPrefix = builder.metricPrefix;
+        this.metricsConfig = builder.metricsConfig;
         this.threadTimeOut = builder.threadTimeOut;
 
         setNoOfRegionThreadsPerAccount(builder.noOfRegionThreadsPerAccount);
@@ -165,6 +167,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
                             .withRateLimiter(rateLimiter)
                             .withAWSRequestCounter(awsRequestsCounter)
                             .withPrefix(metricPrefix)
+                            .withMetricsConfig(metricsConfig)
                             .withAmazonCloudWatchConfig(awsCredentials, awsClientConfig)
                             .build();
 
@@ -224,6 +227,7 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
         private RateLimiter rateLimiter;
         private LongAdder awsRequestsCounter;
         private String metricPrefix;
+        private MetricsConfig metricsConfig;
 
         public Builder withAccount(Account account) {
             this.account = account;
@@ -286,6 +290,11 @@ public class AccountMetricStatisticsCollector implements Callable<AccountMetricS
 
         public Builder withThreadTimeOut(int threadTimeOut) {
             this.threadTimeOut = threadTimeOut;
+            return this;
+        }
+
+        public Builder withMetricsConfig(MetricsConfig metricsConfig) {
+            this.metricsConfig = metricsConfig;
             return this;
         }
     }

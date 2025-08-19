@@ -7,6 +7,7 @@
 
 package com.appdynamics.extensions.aws.collectors;
 
+import com.appdynamics.extensions.aws.config.MetricsConfig;
 import com.appdynamics.extensions.aws.config.MetricsTimeRange;
 import com.appdynamics.extensions.aws.dto.AWSMetric;
 import com.appdynamics.extensions.aws.exceptions.AwsException;
@@ -25,6 +26,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.LongAdder;
 
@@ -67,6 +69,8 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
     private String metricPrefix;
 
+    private MetricsConfig metricsConfig;
+
     private MetricStatisticCollector(Builder builder) {
 
         this.accountName = builder.accountName;
@@ -76,6 +80,7 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         this.statType = builder.statType;
         this.awsRequestsCounter = builder.awsRequestsCounter;
         this.metricPrefix = builder.metricPrefix;
+        this.metricsConfig = builder.metricsConfig;
 
         //Check if time ranges are specified locally for a metric. If not use the global time ranges.
         MetricsTimeRange metricsTimeRangeLocal = metric.getIncludeMetric().getMetricsTimeRange();
@@ -141,11 +146,23 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
     }
 
     private GetMetricStatisticsRequest createGetMetricStatisticsRequest() {
+        // Determine period: metric-specific > global config > default constant
+        int periodToUse = DEFAULT_METRIC_PERIOD_IN_SEC;
+        
+        if (metric.getIncludeMetric().getPeriod() > 0) {
+            periodToUse = metric.getIncludeMetric().getPeriod();
+        } else if (metricsConfig != null && metricsConfig.getDefaultPeriod() > 0) {
+            periodToUse = metricsConfig.getDefaultPeriod();
+        }
+
+        // Validate period according to AWS CloudWatch requirements
+        validatePeriod(periodToUse, startTimeInMinsBeforeNow);
+
         GetMetricStatisticsRequest getMetricStatisticsRequest = GetMetricStatisticsRequest.builder()
                 .startTime(DateTime.now(DateTimeZone.UTC).minusMinutes(startTimeInMinsBeforeNow).toDate().toInstant())
                 .namespace(metric.getMetric().namespace())
                 .dimensions(metric.getMetric().dimensions())
-                .period(DEFAULT_METRIC_PERIOD_IN_SEC)
+                .period(periodToUse)
                 .metricName(metric.getIncludeMetric().getName())
                 .statistics(statType.asStatistic())
                 .endTime(DateTime.now(DateTimeZone.UTC).minusMinutes(endTimeInMinsBeforeNow).toDate().toInstant())
@@ -158,11 +175,17 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         Datapoint datapoint = null;
 
         if (datapoints != null && !datapoints.isEmpty()) {
-            if (datapoints.size() > 1) {
-                Collections.sort(datapoints, new DatapointComparator());
-            }
-
-            datapoint = datapoints.get(0);
+            // datapoint = datapoints.get(0);
+            // if (datapoints.size() > 1) {
+            //     for(int i = 1; i < datapoints.size(); i++) {
+            //         if (compareDatapoint(datapoint, datapoints.get(i)) < 0) {
+            //             datapoint = datapoints.get(i);
+            //         }
+            //     }
+            // }
+            Optional<Datapoint> latestDatapoint = datapoints.stream()
+                .max(Comparator.comparing(this::getTimestamp));
+            datapoint = latestDatapoint.orElse(null);
 
         } else if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(String.format("No statistics retrieved for Namespace [%s] "
@@ -172,6 +195,27 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         }
 
         return datapoint;
+    }
+
+    public int compareDatapoint(Datapoint datapoint1, Datapoint datapoint2) {
+
+        if (getTimestamp(datapoint1) == null && getTimestamp(datapoint2) == null) {
+            return 0;
+
+        } else if (getTimestamp(datapoint1) == null && getTimestamp(datapoint2) != null) {
+            return 1;
+
+        } else if (getTimestamp(datapoint1) != null && getTimestamp(datapoint2) == null) {
+            return -1;
+
+        } else {
+            return -1 * getTimestamp(datapoint1).compareTo(getTimestamp(datapoint2));
+        }
+
+    }
+
+    private Date getTimestamp(Datapoint datapoint) {
+        return datapoint != null ? Date.from(datapoint.timestamp()) : null;
     }
 
     /**
@@ -239,6 +283,28 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
     }
 
     /**
+     * Validates period according to AWS CloudWatch requirements based on data age
+     * @param period the period in seconds
+     * @param startTimeInMinsBeforeNow the start time in minutes before now
+     */
+    private void validatePeriod(int period, int startTimeInMinsBeforeNow) {
+        if (period <= 0 || period % 60 != 0) {
+            throw new IllegalArgumentException("Period must be a positive multiple of 60 seconds");
+        }
+        
+        // AWS CloudWatch period requirements based on data age
+        if (startTimeInMinsBeforeNow > 180) { // > 3 hours
+            if (startTimeInMinsBeforeNow <= 21600 && period < 60) { // 3 hours to 15 days
+                throw new IllegalArgumentException("For data older than 3 hours, period must be at least 60 seconds");
+            } else if (startTimeInMinsBeforeNow <= 90720 && period < 300) { // 15 to 63 days
+                throw new IllegalArgumentException("For data older than 15 days, period must be at least 300 seconds");
+            } else if (startTimeInMinsBeforeNow > 90720 && period < 3600) { // > 63 days
+                throw new IllegalArgumentException("For data older than 63 days, period must be at least 3600 seconds");
+            }
+        }
+    }
+
+    /**
      * Builder class to maintain readability when
      * building {@link MetricStatisticCollector} due to its params size
      */
@@ -259,6 +325,8 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         private LongAdder awsRequestsCounter;
 
         private String metricPrefix;
+
+        private MetricsConfig metricsConfig;
 
         public Builder withAccountName(String accountName) {
             this.accountName = accountName;
@@ -302,6 +370,11 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
 
         public Builder withPrefix(String metricPrefix) {
             this.metricPrefix = metricPrefix;
+            return this;
+        }
+
+        public Builder withMetricsConfig(MetricsConfig metricsConfig) {
+            this.metricsConfig = metricsConfig;
             return this;
         }
     }

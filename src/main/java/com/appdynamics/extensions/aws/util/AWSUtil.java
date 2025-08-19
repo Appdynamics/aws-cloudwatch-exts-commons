@@ -19,7 +19,7 @@ import com.appdynamics.extensions.util.CryptoUtils;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
-import software.amazon.awssdk.core.retry.RetryPolicy;
+import software.amazon.awssdk.retries.StandardRetryStrategy;
 import software.amazon.awssdk.http.SdkHttpClient;
 import software.amazon.awssdk.http.apache.ApacheHttpClient;
 import software.amazon.awssdk.http.apache.ProxyConfiguration;
@@ -99,9 +99,11 @@ public class AWSUtil {
 
         SdkHttpClient httpClient = httpClientBuilder.build();
 
-        // Configure client override settings (e.g., retry policy)
+        // Configure client override settings (e.g., retry strategy)
         ClientOverrideConfiguration overrideConfiguration = ClientOverrideConfiguration.builder()
-                .retryPolicy(RetryPolicy.builder().numRetries(maxErrorRetrySize).build())
+                .retryStrategy(StandardRetryStrategy.builder()
+                        .maxAttempts(maxErrorRetrySize + 1) // maxAttempts = numRetries + 1
+                        .build())
                 .build();
 
         return new AwsClientConfig(httpClient, overrideConfiguration);
