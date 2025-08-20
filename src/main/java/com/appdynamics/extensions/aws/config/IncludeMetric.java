@@ -31,6 +31,8 @@ public class IncludeMetric {
 
     private MetricsTimeRange metricsTimeRange;
 
+    private int period = 60; // Default period in seconds
+
     public String getName() {
         return name;
     }
@@ -101,5 +103,13 @@ public class IncludeMetric {
 
     public void setMetricsTimeRange(MetricsTimeRange metricsTimeRange) {
         this.metricsTimeRange = metricsTimeRange;
+    }
+
+    public int getPeriod() {
+        return period;
+    }
+
+    public void setPeriod(int period) {
+        this.period = period;
     }
 }

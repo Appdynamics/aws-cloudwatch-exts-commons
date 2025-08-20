@@ -22,6 +22,8 @@ public class MetricsConfig {
 
     private int maxErrorRetrySize;
 
+    private int defaultPeriod = 60; // Default period in seconds for all metrics
+
     public List<IncludeMetric> getIncludeMetrics() {
         return includeMetrics;
     }
@@ -52,5 +54,13 @@ public class MetricsConfig {
 
     public void setMaxErrorRetrySize(int maxErrorRetrySize) {
         this.maxErrorRetrySize = maxErrorRetrySize;
+    }
+
+    public int getDefaultPeriod() {
+        return defaultPeriod;
+    }
+
+    public void setDefaultPeriod(int defaultPeriod) {
+        this.defaultPeriod = defaultPeriod;
     }
 }
