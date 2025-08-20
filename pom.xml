@@ -10,7 +10,7 @@
 
 	<properties>
 		<release.repo.local.dir>../maven-repo</release.repo.local.dir>
-		<aws.sdk.version>2.29.15</aws.sdk.version>
+		<aws.sdk.version>2.31.12</aws.sdk.version>
 	</properties>
 
 	<dependencies>
