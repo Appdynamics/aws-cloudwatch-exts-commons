@@ -175,14 +175,6 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         Datapoint datapoint = null;
 
         if (datapoints != null && !datapoints.isEmpty()) {
-            // datapoint = datapoints.get(0);
-            // if (datapoints.size() > 1) {
-            //     for(int i = 1; i < datapoints.size(); i++) {
-            //         if (compareDatapoint(datapoint, datapoints.get(i)) < 0) {
-            //             datapoint = datapoints.get(i);
-            //         }
-            //     }
-            // }
             Optional<Datapoint> latestDatapoint = datapoints.stream()
                 .max(Comparator.comparing(this::getTimestamp));
             datapoint = latestDatapoint.orElse(null);
@@ -195,23 +187,6 @@ public class MetricStatisticCollector implements Callable<MetricStatistic> {
         }
 
         return datapoint;
-    }
-
-    public int compareDatapoint(Datapoint datapoint1, Datapoint datapoint2) {
-
-        if (getTimestamp(datapoint1) == null && getTimestamp(datapoint2) == null) {
-            return 0;
-
-        } else if (getTimestamp(datapoint1) == null && getTimestamp(datapoint2) != null) {
-            return 1;
-
-        } else if (getTimestamp(datapoint1) != null && getTimestamp(datapoint2) == null) {
-            return -1;
-
-        } else {
-            return -1 * getTimestamp(datapoint1).compareTo(getTimestamp(datapoint2));
-        }
-
     }
 
     private Date getTimestamp(Datapoint datapoint) {
