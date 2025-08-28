@@ -10,8 +10,18 @@
 
 	<properties>
 		<release.repo.local.dir>../maven-repo</release.repo.local.dir>
-		<aws.sdk.version>2.32.29</aws.sdk.version>
+		<aws.sdk.version>2.32.30</aws.sdk.version>
 	</properties>
+	<dependencyManagement>
+        <dependencies>
+            <!-- Force latest Jakarta Servlet API version -->
+            <dependency>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>6.1.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
 	<dependencies>
 		<dependency>
